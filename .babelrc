@@ -1,0 +1,19 @@
+{
+  "presets": ["@babel/react", "@babel/typescript", "@babel/env"],
+  "env": {
+    "development": {
+      "plugins": [
+        [
+          "emotion",
+          {
+            "autoLabel": true,
+            "labelFormat": "[filename]-[local]"
+          }
+        ]
+      ]
+    },
+    "production": {
+      "plugins": ["emotion"]
+    }
+  }
+}
