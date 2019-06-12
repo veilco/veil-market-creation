@@ -1,9 +1,12 @@
+require("dotenv").config();
+const webpack = require("webpack");
 const HtmlWebPackPlugin = require("html-webpack-plugin");
 const ErrorOverlayPlugin = require("error-overlay-webpack-plugin");
 const path = require("path");
 
 module.exports = {
   entry: ["./src/index.ts"],
+  mode: process.env.NODE_ENV || "development",
   module: {
     rules: [
       {
@@ -27,7 +30,10 @@ module.exports = {
       template: "./src/index.html",
       filename: "./index.html"
     }),
-    process.env.NODE_ENV !== "production" ? new ErrorOverlayPlugin() : undefined
+    process.env.NODE_ENV !== "production"
+      ? new ErrorOverlayPlugin()
+      : undefined,
+    new webpack.EnvironmentPlugin(["NODE_ENV"])
   ].filter(t => t),
   devServer: {
     contentBase: path.join(__dirname, "dist"),
