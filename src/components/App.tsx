@@ -1,33 +1,35 @@
 import React from "react";
-import StoreContext from "./StoreContext";
-import { useContext } from "react";
-import styled from "@emotion/styled";
 import { Global, css } from "@emotion/core";
-import Spacer from "src/components/Spacer";
-
-const Heading = styled.div`
-  font-size: 18px;
-  font-weight: 500;
-`;
+import MarketList from "src/components/MarketList";
+import CreateMarket from "src/components/CreateMarket";
+import ViewMarket from "src/components/ViewMarket";
+import Header from "src/components/Header";
+import { BrowserRouter, Route } from "react-router-dom";
 
 export default function App() {
-  const store = useContext(StoreContext);
-  console.log(store);
   return (
     <>
-      <Global
-        styles={css`
-          body {
-            margin: 0;
-            font-family: system-ui;
-          }
-        `}
-      />
-      <Heading>
-        <Spacer />
-        <Spacer inline />
-        Hello world!
-      </Heading>
+      <BrowserRouter>
+        <Global
+          styles={css`
+            body {
+              margin: 0;
+              font-family: system-ui;
+              background-color: #fbfcfd;
+              font-family: "Inter", system-ui, sans-serif;
+            }
+
+            button,
+            input {
+              font-family: inherit;
+            }
+          `}
+        />
+        <Header />
+        <Route path="/" exact component={MarketList} />
+        <Route path="/market/:uid" component={ViewMarket} />
+        <Route path="/create" component={CreateMarket} />
+      </BrowserRouter>
     </>
   );
 }

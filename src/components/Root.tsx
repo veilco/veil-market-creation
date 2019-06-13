@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { ApolloProvider } from "react-apollo-hooks";
+import { Provider as MobxProvider } from "mobx-react";
 import Store from "../store";
 import StoreContext from "./StoreContext";
 import App from "./App";
@@ -24,7 +26,11 @@ export default function Root() {
 
   return (
     <StoreContext.Provider value={store}>
-      <App />
+      <MobxProvider store={store}>
+        <ApolloProvider client={store.client}>
+          <App />
+        </ApolloProvider>
+      </MobxProvider>
     </StoreContext.Provider>
   );
 }
