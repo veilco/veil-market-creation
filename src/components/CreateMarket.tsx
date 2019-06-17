@@ -1,9 +1,10 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useRef } from "react";
 import { useMutation } from "react-apollo-hooks";
 import gql from "graphql-tag";
 import { useState } from "react";
 import { Market } from "src/types";
 import { RouteComponentProps } from "react-router-dom";
+import MarketForm, { MarketFormStore } from "./MarketForm";
 
 export default function CreateMarket(props: RouteComponentProps) {
   const createMarket = useMutation<{ createMarket: Market }>(
@@ -33,9 +34,11 @@ export default function CreateMarket(props: RouteComponentProps) {
 
   const createMarketCallback = useCallback(async () => {
     setIsCreating(true);
-    await createMarket({ variables: { market: getMarket() } });
+    await createMarket({ variables: { market: form.current.toParams() } });
     props.history.push("/");
   }, [setIsCreating, createMarket, getMarket]);
+
+  const form = useRef(new MarketFormStore());
 
   return (
     <>
@@ -44,6 +47,7 @@ export default function CreateMarket(props: RouteComponentProps) {
         value={description}
         onChange={e => setDescription(e.target.value)}
       />
+      <MarketForm form={form.current} />
       <button onClick={createMarketCallback} disabled={isCreating}>
         {isCreating ? "Creating..." : "Create"}
       </button>

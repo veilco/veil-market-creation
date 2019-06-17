@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useContext } from "react";
 import styled from "@emotion/styled";
 import Spacer from "src/components/Spacer";
 import Button from "src/components/Button";
@@ -6,6 +6,7 @@ import Icon from "src/components/Icon";
 import Transactions from "src/components/Transactions";
 import { colors, basePadding, headerHeight } from "src/styles";
 import { Link } from "react-router-dom";
+import StoreContext from "./StoreContext";
 const logo = require("src/images/logo.png");
 
 const HeaderContainer = styled.div`
@@ -24,6 +25,7 @@ const LogoContainer = styled.div`
 `;
 
 export default function Header() {
+  const store = useContext(StoreContext);
   return (
     <HeaderContainer>
       <LogoContainer>
@@ -38,7 +40,7 @@ export default function Header() {
         <Icon name="add" block /> Create
       </Button>
       <Spacer inline />
-      <Transactions />
+      <Transactions store={store} />
     </HeaderContainer>
   );
 }

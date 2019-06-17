@@ -1,11 +1,10 @@
 exports.up = async function(knex, Promise) {
-  await knex.schema.createTable("accounts", function(t) {
+  await knex.schema.createTable("draft_markets", function(t) {
     t.timestamps(true, true);
+    t.increments();
 
-    t.integer("id")
-      .unique()
-      .notNullable()
-      .index();
+    t.string("description");
+    t.string("details");
 
     t.string("handle")
       .notNullable()

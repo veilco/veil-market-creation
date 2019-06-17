@@ -1,6 +1,6 @@
 import React from "react";
 import styled from "@emotion/styled";
-import { basePadding, colors, lighten } from "src/styles";
+import { colors, lighten } from "src/styles";
 import { Link } from "react-router-dom";
 
 interface Props {
@@ -16,6 +16,11 @@ interface Props {
   disabled?: boolean;
   to?: string;
 }
+
+type ButtonProps = React.DetailedHTMLProps<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  HTMLButtonElement
+>;
 
 const RawButton = styled.button<{
   color?: string;
@@ -89,7 +94,7 @@ const getSizes = (props: Props) => {
   return { paddingX, paddingY, fontSize };
 };
 
-const Button: React.SFC<Props & React.HTMLProps<HTMLButtonElement>> = props => {
+const Button: React.SFC<Props & ButtonProps> = props => {
   let { paddingY, paddingX, fontSize } = getSizes(props);
   let Component = RawButton;
   if (props.transparent) {
@@ -97,6 +102,8 @@ const Button: React.SFC<Props & React.HTMLProps<HTMLButtonElement>> = props => {
     paddingY -= 1;
     Component = RawTransparentButton;
   }
+
+  props.type;
 
   const button = (
     <Component
@@ -111,9 +118,7 @@ const Button: React.SFC<Props & React.HTMLProps<HTMLButtonElement>> = props => {
   return button;
 };
 
-export const TransparentButton: React.SFC<
-  Props & React.HTMLProps<HTMLButtonElement>
-> = props => {
+export const TransparentButton: React.SFC<Props & ButtonProps> = props => {
   return <Button {...props} transparent />;
 };
 
