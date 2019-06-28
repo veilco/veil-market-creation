@@ -2,7 +2,9 @@
   "scripts": {
     "dev:web": "webpack-dev-server",
     "dev:api": "nodemon src/api/index.ts --watch src/api",
-    "build": "NODE_ENV=production webpack",
+    "build:web": "NODE_ENV=production webpack",
+    "build:api": "NODE_ENV=production tsc -p tsconfig.api.json",
+    "build": "npm run build:web && npm run build:api",
     "start": "serve dist"
   },
   "dependencies": {
@@ -36,7 +38,7 @@
     "babel-loader": "^8.0.6",
     "babel-plugin-emotion": "^10.0.9",
     "bignumber.js": "^9.0.0",
-    "date-fns": "^1.30.1",
+    "date-fns": "^2.0.0-alpha.34",
     "dotenv": "^8.0.0",
     "error-overlay-webpack-plugin": "^0.3.0",
     "graphql": "^14.3.1",

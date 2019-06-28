@@ -14,6 +14,10 @@ interface Market {
   author: string;
   transactionHash?: string;
   status: "draft" | "activating" | "activated";
+  type: "yesno" | "scalar" | "categorical";
+  metadata: {
+    timezone: string;
+  };
 }
 
 type Context = {
@@ -26,15 +30,23 @@ const context = {
 
 const typeDefs = gql`
   scalar Date
+  scalar JSON
 
   enum MarketStatus {
     draft
     activating
-    activated
+    active
+  }
+
+  enum MarketType {
+    yesno
+    scalar
+    categorical
   }
 
   type Market {
     uid: ID
+    type: MarketType
     description: String!
     details: String
     resolutionSource: String
@@ -44,9 +56,14 @@ const typeDefs = gql`
     marketCreatorFeeRate: String
     author: String
     status: MarketStatus
+    metadata: JSON
+    minPrice: String
+    maxPrice: String
+    scalarDenomination: String
   }
 
   input MarketInput {
+    type: MarketType
     description: String!
     details: String
     resolutionSource: String
@@ -56,6 +73,10 @@ const typeDefs = gql`
     marketCreatorFeeRate: String
     author: String
     signature: String
+    metadata: JSON
+    minPrice: String
+    maxPrice: String
+    scalarDenomination: String
   }
 
   type Query {
@@ -94,25 +115,24 @@ const resolvers: IResolvers<any, Context> = {
       const { signature, ...market } = args.market;
       const uid = args.uid;
       // TODO: validate signature
-      ctx.markets = ctx.markets.map(m => {
+      ctx.markets.forEach(m => {
         if (m.uid === uid) {
           if (m.status !== "draft")
             throw new Error("Cannot update market after activation");
-          return market;
+          Object.assign(m, market);
         }
-        return m;
       });
+      return ctx.markets.find(m => m.uid === uid);
     },
     activateMarket: (_: any, args: any, ctx: Context) => {
       const { uid, transactionHash } = args;
       // TODO: validate signature
-      ctx.markets = ctx.markets.map(m => {
+      ctx.markets.forEach(m => {
         if (m.uid === uid) {
           if (m.status !== "draft")
             throw new Error("Market is already activated");
-          return { ...m, status: "activating", transactionHash };
+          Object.assign(m, { status: "activating", transactionHash });
         }
-        return m;
       });
     }
   },

@@ -70,27 +70,29 @@ export function Popover({
       <TransitionGroup>
         {isOpen && (
           <CSSTransition classNames="fade" timeout={200}>
-            <PopoverContainer ref={ref} style={popoverStyles}>
-              <OutsideClickHandler
-                onOutsideClick={() => setTimeout(onClose, 0)}
-              >
-                <PopoverArrow arrowColor={arrowColor} />
-                <PopoverBox
-                  noPad={noPad}
-                  style={
-                    dimensions.right &&
-                    dimensions.right > window.innerWidth - basePadding
-                      ? {
-                          transform: `translateX(-${dimensions.right -
-                            window.innerWidth +
-                            basePadding}px)`
-                        }
-                      : {}
-                  }
+            <PopoverContainer style={popoverStyles}>
+              <div ref={ref}>
+                <OutsideClickHandler
+                  onOutsideClick={() => setTimeout(onClose, 0)}
                 >
-                  {children}
-                </PopoverBox>
-              </OutsideClickHandler>
+                  <PopoverArrow arrowColor={arrowColor} />
+                  <PopoverBox
+                    noPad={noPad}
+                    style={
+                      dimensions.right &&
+                      dimensions.right > window.innerWidth - basePadding
+                        ? {
+                            transform: `translateX(-${dimensions.right -
+                              window.innerWidth +
+                              basePadding}px)`
+                          }
+                        : {}
+                    }
+                  >
+                    {children}
+                  </PopoverBox>
+                </OutsideClickHandler>
+              </div>
             </PopoverContainer>
           </CSSTransition>
         )}

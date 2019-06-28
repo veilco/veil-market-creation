@@ -11,6 +11,7 @@ export default function Root() {
   // Start and stop store on hot reload
   useEffect(() => {
     store.start();
+    (window as any).store = store;
     let isMounted = true;
     if (module.hot) {
       module.hot.accept("../store", () => {

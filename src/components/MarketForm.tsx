@@ -1,6 +1,6 @@
-import React, { Component, useRef, Fragment } from "react";
+import React, { useRef, Fragment } from "react";
 import { observable, computed } from "mobx";
-import { observer, inject } from "mobx-react";
+import { observer } from "mobx-react";
 import Store from "src/store";
 import {
   Input,
@@ -25,7 +25,10 @@ import { toWei, fromWei } from "src/utils/units";
 import { Market } from "src/types";
 import Flex from "src/components/Flex";
 import Tooltip from "src/components/Tooltip";
+import { useObserver, Observer } from "mobx-react-lite";
 
+const CreatableSelect: typeof Select = require("react-select/creatable")
+  .default;
 const Checkbox = require("src/components/Checkbox").default;
 
 const ResolutionSourceOption = styled.label`
@@ -163,21 +166,23 @@ interface Props {
 
 export class MarketFormStore {
   @observable type: "yesno" | "scalar" = "yesno";
-  @observable name: string = "";
+  @observable description: string = "";
   @observable details: string = "";
-  @observable endsAt: Date;
+  @observable endTime: Date;
   @observable resolutionSource: string | null = null;
   @observable theme: string = "blue";
   @observable maxPrice: BigNumber;
   @observable minPrice: BigNumber;
-  @observable denomination: string = "USD";
+  @observable scalarDenomination: string = "USD";
   @observable timezone: string;
+  @observable tags: string[];
+  @observable category: string;
 
   @computed
   get isExpirationValid() {
     return (
-      this.endsAt.getTime() > Date.now() + ms("1h") &&
-      this.endsAt.getTime() < Date.now() + ms("90d")
+      this.endTime.getTime() > Date.now() + ms("1h") &&
+      this.endTime.getTime() < Date.now() + ms("90d")
     );
   }
 
@@ -185,7 +190,7 @@ export class MarketFormStore {
   get isScalarValid() {
     if (this.type !== "scalar") return true;
     return (
-      this.denomination &&
+      this.scalarDenomination &&
       this.minPrice &&
       this.maxPrice &&
       this.maxPrice.gt(this.minPrice)
@@ -201,7 +206,7 @@ export class MarketFormStore {
   @computed
   get isValid() {
     return (
-      this.name &&
+      this.description &&
       this.details &&
       this.isExpirationValid &&
       this.isScalarValid &&
@@ -213,43 +218,41 @@ export class MarketFormStore {
     const scalarFields = {
       maxPrice: this.maxPrice,
       minPrice: this.minPrice,
-      denomination: this.denomination
+      scalarDenomination: this.scalarDenomination
     };
     return {
       type: this.type,
-      name: this.name,
+      description: this.description,
       details: this.details,
-      endsAt: this.endsAt,
+      endTime: this.endTime,
       resolutionSource: this.resolutionSource,
-      metadata: { theme: this.theme, timezone: this.timezone },
+      metadata: { timezone: this.timezone },
+      tags: this.tags,
+      category: this.category,
       ...(this.type === "scalar" ? scalarFields : {})
     };
   }
 
-  // static fromMarket(market: Market) {
-  //   const form = new MarketFormStore();
-  //   form.type = market.type as typeof form.type;
-  //   form.endsAt = market.endsAt;
-  //   form.name = market.description;
-  //   form.details = market.details;
-  //   form.resolutionSource = market.resolutionSource;
-  //   form.theme = market.metadata.theme;
-  //   form.timezone = market.metadata.timezone;
-  //   form.minPrice = market.minPrice;
-  //   form.maxPrice = market.maxPrice;
-  //   form.denomination = market.denomination;
-  //   return form;
-  // }
+  static fromMarket(market: Market) {
+    const form = new MarketFormStore();
+    form.type = market.type as typeof form.type;
+    form.endTime = new Date(market.endTime);
+    form.description = market.description;
+    form.details = market.details;
+    form.resolutionSource = market.resolutionSource || null;
+    form.timezone = market.metadata.timezone;
+    form.minPrice = new BigNumber(market.minPrice);
+    form.maxPrice = new BigNumber(market.maxPrice);
+    form.tags = market.tags;
+    form.category = market.category;
+    form.scalarDenomination = market.scalarDenomination;
+    return form;
+  }
 }
 
-@inject("store")
-@observer
-export default class MarketForm extends Component<Props> {
-  get form() {
-    return this.props.form;
-  }
-
-  render() {
+export default function MarketForm(props: Props) {
+  return useObserver(() => {
+    const form = props.form;
     return (
       <div>
         <Label>
@@ -263,21 +266,21 @@ export default class MarketForm extends Component<Props> {
         <Spacer small />
         <ButtonGroup style={{ flexWrap: "wrap" }}>
           <PositionButton
-            selected={this.form.type === "yesno"}
-            onClick={() => (this.form.type = "yesno")}
+            selected={form.type === "yesno"}
+            onClick={() => (form.type = "yesno")}
           >
             <h2>Binary</h2>
             <h3>Yes or no</h3>
-            <Check in={this.form.type === "yesno"} />
+            <Check in={form.type === "yesno"} />
           </PositionButton>
           <Spacer big inline />
           <PositionButton
-            selected={this.form.type === "scalar"}
-            onClick={() => (this.form.type = "scalar")}
+            selected={form.type === "scalar"}
+            onClick={() => (form.type = "scalar")}
           >
             <h2>Scalar</h2>
             <h3>Pick a range</h3>
-            <Check in={this.form.type === "scalar"} />
+            <Check in={form.type === "scalar"} />
           </PositionButton>
           <Spacer big inline />
           <PositionButton selected={false} disabled>
@@ -289,21 +292,27 @@ export default class MarketForm extends Component<Props> {
         <Spacer big />
         <Label>Market question</Label>
         <Spacer small />
-        <InputGroup>
-          <Input
-            placeholder="Write your question here"
-            onChange={e => (this.form.name = e.target.value)}
-            value={this.form.name}
-          />
-        </InputGroup>
-        {this.form.type === "scalar" && (
+        <Observer>
+          {() => (
+            <InputGroup>
+              <Input
+                placeholder="Write your question here"
+                onChange={e => (form.description = e.target.value)}
+                value={form.description}
+              />
+            </InputGroup>
+          )}
+        </Observer>
+        {form.type === "scalar" && (
           <Fragment>
             <Spacer big />
             <Label>Unit of measurement</Label>
             <Spacer small />
             <DenominationSelect
-              value={this.form.denomination}
-              onChange={denomination => (this.form.denomination = denomination)}
+              value={form.scalarDenomination}
+              onChange={denomination =>
+                (form.scalarDenomination = denomination)
+              }
             />
             <Spacer big />
             <Label>Scalar market range</Label>
@@ -313,15 +322,15 @@ export default class MarketForm extends Component<Props> {
                 <ParseInput
                   placeholder="0"
                   component={Input}
-                  value={this.form.minPrice}
-                  onChange={val => (this.form.minPrice = val)}
+                  value={form.minPrice}
+                  onChange={val => (form.minPrice = val)}
                   {...bnAdapter(
                     bn => (bn ? fromWei(bn) : ""),
                     str => toWei(str)
                   )}
                   style={{ minWidth: 0 }}
                 />
-                <InputUnit>{this.form.denomination}</InputUnit>
+                <InputUnit>{form.scalarDenomination}</InputUnit>
               </InputGroup>
               <Spacer inline />
               <span style={{ color: colors.textGrey, fontSize: "14px" }}>
@@ -332,15 +341,15 @@ export default class MarketForm extends Component<Props> {
                 <ParseInput
                   placeholder="100"
                   component={Input}
-                  value={this.form.maxPrice}
-                  onChange={val => (this.form.maxPrice = val)}
+                  value={form.maxPrice}
+                  onChange={val => (form.maxPrice = val)}
                   {...bnAdapter(
                     bn => (bn ? fromWei(bn) : ""),
                     str => toWei(str)
                   )}
                   style={{ minWidth: 0 }}
                 />
-                <InputUnit>{this.form.denomination}</InputUnit>
+                <InputUnit>{form.scalarDenomination}</InputUnit>
               </InputGroup>
             </div>
           </Fragment>
@@ -356,10 +365,10 @@ export default class MarketForm extends Component<Props> {
         </Label>
         <Spacer small />
         <ExpirationDatePicker
-          defaultDate={this.form.endsAt || new Date(Date.now() + ms("7d"))}
-          onChange={date => (this.form.endsAt = date)}
-          onTimezoneChange={timezone => (this.form.timezone = timezone)}
-          defaultTimezone={this.form.timezone}
+          defaultDate={form.endTime || new Date(Date.now() + ms("7d"))}
+          onChange={date => (form.endTime = date)}
+          onTimezoneChange={timezone => (form.timezone = timezone)}
+          defaultTimezone={form.timezone}
         />
         <Spacer big />
         <Label>
@@ -376,8 +385,8 @@ export default class MarketForm extends Component<Props> {
           <Checkbox
             type="radio"
             name="resolutionSource"
-            onChange={() => (this.form.resolutionSource = null) as any}
-            checked={this.form.resolutionSource === null}
+            onChange={() => (form.resolutionSource = null) as any}
+            checked={form.resolutionSource === null}
           />
           <Spacer inline small />
           General knowledge (recommended)
@@ -387,20 +396,20 @@ export default class MarketForm extends Component<Props> {
           <Checkbox
             type="radio"
             name="resolutionSource"
-            onChange={() => (this.form.resolutionSource = "")}
-            checked={this.form.resolutionSource !== null}
+            onChange={() => (form.resolutionSource = "")}
+            checked={form.resolutionSource !== null}
           />
           <Spacer inline small /> Other:
           <Spacer inline small />
           <InputGroup style={{ display: "inline-flex" }}>
             <Input
               style={{ fontSize: "14px", padding: "6px" }}
-              value={this.form.resolutionSource || ""}
-              onChange={e => (this.form.resolutionSource = e.target.value)}
+              value={form.resolutionSource || ""}
+              onChange={e => (form.resolutionSource = e.target.value)}
             />
           </InputGroup>
         </ResolutionSourceOption>
-        {!this.form.isResolutionSourceValid && (
+        {!form.isResolutionSourceValid && (
           <Fragment>
             <Spacer small />
             <Error>
@@ -419,32 +428,68 @@ export default class MarketForm extends Component<Props> {
           </Help>
         </Label>
         <Spacer small />
-        <InputGroup>
-          <Input
-            as="textarea"
-            placeholder="Write comprehensive instructions for how this market should resolve"
-            onChange={e => (this.form.details = e.target.value)}
-            value={this.form.details}
-            style={{ resize: "none", fontSize: "16px" }}
-            {...{
-              rows: 4
-            } as any}
-          />
-        </InputGroup>
+        <Observer>
+          {() => (
+            <InputGroup>
+              <Input
+                as="textarea"
+                placeholder="Write comprehensive instructions for how this market should resolve"
+                onChange={e => (form.details = e.target.value)}
+                value={form.details}
+                style={{ resize: "none", fontSize: "16px" }}
+                {...{
+                  rows: 4
+                } as any}
+              />
+            </InputGroup>
+          )}
+        </Observer>
         <Spacer big />
-        <Label>Theme color</Label>
-        <ThemeOptions>
-          <ThemeOption color={colors.blue} form={this.form} theme="blue" />
-          <ThemeOption
-            color={colors.darkGreen}
-            form={this.form}
-            theme="green"
-          />
-          <ThemeOption color={colors.red} form={this.form} theme="red" />
-          <ThemeOption color={colors.orange} form={this.form} theme="orange" />
-          <ThemeOption color={colors.purple} form={this.form} theme="purple" />
-        </ThemeOptions>
+        <Label>
+          Category
+          <Spacer small inline />
+          <Help>TODO</Help>
+        </Label>
+        <Spacer small />
+        <Observer>
+          {() => (
+            <InputGroup>
+              <Input
+                onChange={e => (form.category = e.target.value)}
+                value={form.category}
+              />
+            </InputGroup>
+          )}
+        </Observer>
+        <Spacer big />
+        <Label>
+          Tags
+          <Spacer small inline />
+          <Help>TODO</Help>
+        </Label>
+        <Spacer small />
+        <Observer>
+          {() => (
+            <CreatableSelect
+              styles={{
+                control: base => ({
+                  ...base,
+                  border: `2px solid ${colors.borderGrey}`,
+                  borderRadius: 4,
+                  backgroundColor: colors.white,
+                  padding: `${basePadding / 2}px 0`,
+                  "&:hover": { borderColor: colors.grey }
+                })
+              }}
+              value={(form.tags || []).map(tag => ({ value: tag, label: tag }))}
+              onChange={(tags: { value: string }[]) =>
+                (form.tags = (tags || []).map(t => t.value))
+              }
+              isMulti={true}
+            />
+          )}
+        </Observer>
       </div>
     );
-  }
+  });
 }

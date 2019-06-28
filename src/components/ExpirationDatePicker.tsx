@@ -53,6 +53,8 @@ export default class ExpirationDatePicker extends Component<{
     when(
       () => this.offsetInMinutes !== undefined,
       () => {
+        this.props.defaultDate;
+
         let localDate = new Date(this.props.defaultDate);
         // Round to nearest 30 minutes
         localDate.setMinutes(Math.floor(localDate.getMinutes() / 30) * 30);
@@ -116,7 +118,7 @@ export default class ExpirationDatePicker extends Component<{
   @computed
   get finalDate() {
     if (!this.date || !this.time) return null;
-    const date = format(this.date, "YYYY-MM-DD");
+    const date = format(this.date, "yyyy-MM-dd");
     const time = format(this.time, "HH:mm:ss");
     return new Date(`${date}T${time}${this.offset}`);
   }

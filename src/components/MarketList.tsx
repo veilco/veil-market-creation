@@ -5,13 +5,13 @@ import { Link } from "react-router-dom";
 import styled from "@emotion/styled";
 import format from "date-fns/format";
 import getTimezoneName from "src/utils/getTimezoneName";
-import Badge from "src/components/Badge";
+import MarketStatusBadge from "src/components/MarketStatusBadge";
 import { Market } from "src/types";
 import { colors, basePadding } from "src/styles";
 import Spacer from "src/components/Spacer";
 
 const Wrapper = styled.div`
-  padding: 0 ${basePadding}px;
+  padding: 0 ${basePadding * 2}px;
 `;
 
 const Tr = styled.div`
@@ -43,7 +43,7 @@ const Table = styled.div`
   overflow: hidden;
 
   ${Td} {
-    padding: ${basePadding / 2}px;
+    padding: ${basePadding}px;
     text-align: left;
     vertical-align: middle;
     border: 1px solid ${colors.borderGrey};
@@ -89,7 +89,7 @@ export default function MarketList() {
 
   return (
     <Wrapper>
-      <Spacer />
+      <Spacer big />
       <Heading>
         Your Augur Markets
         <Spacer xsmall />
@@ -108,19 +108,11 @@ export default function MarketList() {
           <TrLink to={`/market/${market.uid}`} key={market.uid}>
             <Td>{market.description}</Td>
             <Td>
-              {format(market.endTime, "MMMM D, YYYY h:mmA ")}{" "}
+              {format(new Date(market.endTime), "MMMM d, yyyy h:mma ")}{" "}
               {getTimezoneName()}
             </Td>
             <Td>
-              {market.status === "draft" && (
-                <Badge color={colors.orange}>DRAFT</Badge>
-              )}
-              {market.status === "activated" && (
-                <Badge color={colors.blue}>ACTIVE</Badge>
-              )}
-              {market.status === "activating" && (
-                <Badge color={colors.blue}>ACTIVATING</Badge>
-              )}
+              <MarketStatusBadge market={market} />
             </Td>
             <Td>-</Td>
             <Td>-</Td>

@@ -652,7 +652,7 @@ export default function ReactDatePickerStyles() {
           bottom: 0;
           box-sizing: border-box;
           color: #fff;
-          content: "\00d7";
+          content: "\\00d7";
           cursor: pointer;
           font-size: 12px;
           height: 16px;

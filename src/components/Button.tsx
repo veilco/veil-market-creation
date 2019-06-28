@@ -40,6 +40,7 @@ const RawButton = styled.button<{
   font-family: inherit;
   transition: background-color 0.2s, box-shadow 0.2s;
   box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+  text-decoration: none;
 
   &:hover {
     background-color: ${props =>
@@ -54,6 +55,24 @@ const RawButton = styled.button<{
   &:disabled {
     pointer-events: none;
     opacity: 0.5;
+  }
+
+  &:focus,
+  &:active {
+    outline: 0 none;
+    box-shadow: 0 0 0 1px ${lighten(colors.blue, 20)};
+  }
+`;
+
+const WrapperLink = styled(Link)`
+  text-decoration: none;
+  display: contents;
+
+  &:focus,
+  &:focus-within,
+  &:active {
+    outline: 0 none;
+    box-shadow: 0 0 0 1px ${lighten(colors.blue, 20)};
   }
 `;
 
@@ -114,7 +133,8 @@ const Button: React.SFC<Props & ButtonProps> = props => {
     />
   );
 
-  if (props.to && !props.disabled) return <Link to={props.to}>{button}</Link>;
+  if (props.to && !props.disabled)
+    return <WrapperLink to={props.to}>{button}</WrapperLink>;
   return button;
 };
 

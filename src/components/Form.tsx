@@ -1,8 +1,36 @@
 import React from "react";
-import { basePadding, colors, fade, darken } from "src/styles";
+import { basePadding, colors, fade, darken, lighten, media } from "src/styles";
 import Tooltip from "src/components/Tooltip";
 import { round } from "src/utils/units";
 import styled from "@emotion/styled";
+
+export const ModalForm = styled.div`
+  width: 400px;
+
+  ${media.phone} {
+    width: auto;
+  }
+`;
+
+export const ModalFormHeader = styled.div`
+  background-color: ${colors.blue};
+  padding: ${1.5 * basePadding}px;
+  color: #fff;
+
+  & h2 {
+    font-weight: 500;
+    font-size: 18px;
+  }
+
+  & h3 {
+    font-weight: 400;
+    font-size: 13px;
+  }
+`;
+
+export const ModalFormContent = styled.div`
+  padding: ${1.5 * basePadding}px;
+`;
 
 export const Label = styled.label`
   display: block;
@@ -182,6 +210,10 @@ export const InputGroup = styled.div`
   border-radius: 4px;
   align-items: center;
   background-color: ${colors.white};
+
+  &:focus-within {
+    box-shadow: 0 0 0 1px ${lighten(colors.blue, 20)};
+  }
 `;
 
 export const Input = styled("input")<{ as?: any }>`
@@ -195,6 +227,10 @@ export const Input = styled("input")<{ as?: any }>`
 
   &:disabled {
     color: rgba(0, 0, 0, 0.5);
+  }
+
+  &:focus {
+    outline: 0 none;
   }
 `;
 
