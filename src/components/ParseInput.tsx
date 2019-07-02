@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 
-type Renderer<T> = (val: T) => string;
-type Parser<T> = (raw: string) => T;
+type Renderer<T> = (val: T | undefined) => string;
+type Parser<T> = (raw: string) => T | undefined;
 
 type Component =
   | string
@@ -15,7 +15,7 @@ interface Props<T>
   value?: T;
   render: Renderer<T>;
   parse: Parser<T>;
-  onChange: (val: T) => void;
+  onChange: (val: T | undefined) => void;
   onError?: (error: any) => void;
   component?: Component;
 }
@@ -33,7 +33,7 @@ export default function ParseInput<T>({
   let defaultRawValue: string = "";
   if (value) defaultRawValue = render(value);
   const [raw, setRaw] = useState<string>(defaultRawValue);
-  const [error, setError] = useState<string>(null);
+  const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     if (onError) onError(error);
   }, [error]);

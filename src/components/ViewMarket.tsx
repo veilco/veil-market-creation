@@ -103,6 +103,7 @@ export default function ViewMarket(
           minPrice
           maxPrice
           scalarDenomination
+          marketCreatorFeeRate
         }
       }
     `,
@@ -171,7 +172,7 @@ export default function ViewMarket(
             <Label>Market creator fee</Label>
             <Spacer small />
             <MarketDescription>
-              {data.market.marketCreatorFeeRate}
+              {data.market.marketCreatorFeeRate}%
             </MarketDescription>
           </div>
           <MarketBoxSidebar>

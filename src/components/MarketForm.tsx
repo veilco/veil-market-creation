@@ -171,12 +171,13 @@ export class MarketFormStore {
   @observable endTime: Date;
   @observable resolutionSource: string | null = null;
   @observable theme: string = "blue";
-  @observable maxPrice: BigNumber;
-  @observable minPrice: BigNumber;
+  @observable maxPrice: BigNumber | null;
+  @observable minPrice: BigNumber | null;
   @observable scalarDenomination: string = "USD";
   @observable timezone: string;
   @observable tags: string[];
   @observable category: string;
+  @observable marketCreatorFeeRate: string;
 
   @computed
   get isExpirationValid() {
@@ -204,13 +205,22 @@ export class MarketFormStore {
   }
 
   @computed
+  get isMarketCreatorFeeRateValid() {
+    const rateRegex = /^[0-9]+(\.[0-9]+)?$/;
+    if (!rateRegex.test(this.marketCreatorFeeRate)) return false;
+    const rate = new BigNumber(this.marketCreatorFeeRate);
+    return rate.gte(0) && rate.lte(10);
+  }
+
+  @computed
   get isValid() {
     return (
       this.description &&
       this.details &&
       this.isExpirationValid &&
       this.isScalarValid &&
-      this.isResolutionSourceValid
+      this.isResolutionSourceValid &&
+      this.isMarketCreatorFeeRateValid
     );
   }
 
@@ -229,6 +239,9 @@ export class MarketFormStore {
       metadata: { timezone: this.timezone },
       tags: this.tags,
       category: this.category,
+      marketCreatorFeeRate: new BigNumber(
+        this.marketCreatorFeeRate || "0"
+      ).toString(),
       ...(this.type === "scalar" ? scalarFields : {})
     };
   }
@@ -241,11 +254,12 @@ export class MarketFormStore {
     form.details = market.details;
     form.resolutionSource = market.resolutionSource || null;
     form.timezone = market.metadata.timezone;
-    form.minPrice = new BigNumber(market.minPrice);
-    form.maxPrice = new BigNumber(market.maxPrice);
+    form.minPrice = market.minPrice ? new BigNumber(market.minPrice) : null;
+    form.maxPrice = market.maxPrice ? new BigNumber(market.maxPrice) : null;
     form.tags = market.tags;
     form.category = market.category;
     form.scalarDenomination = market.scalarDenomination;
+    form.marketCreatorFeeRate = market.marketCreatorFeeRate || "";
     return form;
   }
 }
@@ -323,7 +337,7 @@ export default function MarketForm(props: Props) {
                   placeholder="0"
                   component={Input}
                   value={form.minPrice}
-                  onChange={val => (form.minPrice = val)}
+                  onChange={val => (form.minPrice = val || null)}
                   {...bnAdapter(
                     bn => (bn ? fromWei(bn) : ""),
                     str => toWei(str)
@@ -342,7 +356,7 @@ export default function MarketForm(props: Props) {
                   placeholder="100"
                   component={Input}
                   value={form.maxPrice}
-                  onChange={val => (form.maxPrice = val)}
+                  onChange={val => (form.maxPrice = val || null)}
                   {...bnAdapter(
                     bn => (bn ? fromWei(bn) : ""),
                     str => toWei(str)
@@ -487,6 +501,28 @@ export default function MarketForm(props: Props) {
               }
               isMulti={true}
             />
+          )}
+        </Observer>
+        <Spacer big />
+        <Label>
+          Creator fee
+          <Spacer small inline />
+          <Help>
+            A percentage from 0% to 10%, the creator fee is the share of open
+            interest that you will earn from traders redeeming their positions.
+          </Help>
+        </Label>
+        <Spacer small />
+        <Observer>
+          {() => (
+            <InputGroup style={{ maxWidth: "100px" }}>
+              <Input
+                onChange={e => (form.marketCreatorFeeRate = e.target.value)}
+                value={form.marketCreatorFeeRate}
+                style={{ minWidth: 0 }}
+              />
+              <InputUnit>%</InputUnit>
+            </InputGroup>
           )}
         </Observer>
       </div>
