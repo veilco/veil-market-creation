@@ -7,6 +7,7 @@ import Transactions from "src/components/Transactions";
 import { colors, basePadding, headerHeight } from "src/styles";
 import { Link } from "react-router-dom";
 import StoreContext from "./StoreContext";
+import Wallet from "src/components/Wallet";
 const logo = require("src/images/logo.png");
 
 const HeaderContainer = styled.div`
@@ -41,6 +42,8 @@ export default function Header() {
       </Button>
       <Spacer inline />
       <Transactions store={store} />
+      <Spacer inline />
+      <Wallet />
     </HeaderContainer>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from "react";
+import React, { useCallback, useRef, useContext } from "react";
 import { useMutation, useQuery } from "react-apollo-hooks";
 import gql from "graphql-tag";
 import { useState } from "react";
@@ -19,8 +19,8 @@ import {
   MarketStatusHeading,
   MarketStatusText
 } from "src/components/ViewMarket";
-import { Observer } from "mobx-react";
 import { useObserver } from "mobx-react-lite";
+import StoreContext from "src/components/StoreContext";
 
 export default function EditMarket(
   props: RouteComponentProps<{ uid: string }>
@@ -75,6 +75,7 @@ export default function EditMarket(
       `
     );
     const [isCreating, setIsCreating] = useState(false);
+    const store = useContext(StoreContext);
 
     const updateMarketCallback = useCallback(async () => {
       if (!data || !form.current) return;
@@ -84,7 +85,7 @@ export default function EditMarket(
           uid: data.market.uid,
           market: {
             ...form.current.toParams(),
-            author: "me"
+            author: store.eth.currentAddress
           }
         }
       });

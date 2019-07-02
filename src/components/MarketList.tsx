@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useContext, useEffect } from "react";
 import { useQuery } from "react-apollo-hooks";
 import gql from "graphql-tag";
 import { Link } from "react-router-dom";
@@ -9,6 +9,8 @@ import MarketStatusBadge from "src/components/MarketStatusBadge";
 import { Market } from "src/types";
 import { colors, basePadding } from "src/styles";
 import Spacer from "src/components/Spacer";
+import StoreContext from "src/components/StoreContext";
+import { useObserver } from "mobx-react-lite";
 
 const Wrapper = styled.div`
   padding: 0 ${basePadding * 2}px;
@@ -67,58 +69,67 @@ const Heading = styled.h1`
 `;
 
 export default function MarketList() {
-  const { data, error, loading } = useQuery<{ markets: Market[] }>(
-    gql`
-      query MarketList {
-        markets(author: "me") {
-          uid
-          description
-          status
-          author
-          endTime
+  return useObserver(() => {
+    const store = useContext(StoreContext);
+    const { data, error, loading, refetch } = useQuery<{ markets: Market[] }>(
+      gql`
+        query MarketList($address: String!) {
+          markets(author: $address) {
+            uid
+            description
+            status
+            author
+            endTime
+          }
+        }
+      `,
+      {
+        fetchPolicy: "no-cache",
+        variables: {
+          address: store.eth.currentAddress || ""
         }
       }
-    `,
-    {
-      fetchPolicy: "no-cache"
-    }
-  );
+    );
+    useEffect(() => {
+      if (store.eth.currentAddress) refetch();
+    }, [store.eth.currentAddress]);
 
-  if (loading) return <>Loading...</>;
-  if (error || !data) return <>Error</>;
+    if (loading) return <>Loading...</>;
+    if (error || !data) return <>Error</>;
 
-  return (
-    <Wrapper>
-      <Spacer big />
-      <Heading>
-        Your Augur Markets
-        <Spacer xsmall />
-        <small>These are Augur markets or draft you have created.</small>
-      </Heading>
-      <Spacer />
-      <Table>
-        <Tr className="head">
-          <Td style={{ width: "40%" }}>Market</Td>
-          <Td style={{ width: "22%" }}>Expiration</Td>
-          <Td style={{ width: "12%" }}>Status</Td>
-          <Td style={{ width: "18%" }}>Open Interest</Td>
-          <Td style={{ width: "18%" }}>Earnings</Td>
-        </Tr>
-        {data.markets.map(market => (
-          <TrLink to={`/market/${market.uid}`} key={market.uid}>
-            <Td>{market.description}</Td>
-            <Td>
-              {format(new Date(market.endTime), "MMMM d, yyyy h:mma ")}{" "}
-              {getTimezoneName()}
-            </Td>
-            <Td>
-              <MarketStatusBadge market={market} />
-            </Td>
-            <Td>-</Td>
-            <Td>-</Td>
-          </TrLink>
-        ))}
-      </Table>
-    </Wrapper>
-  );
+    return (
+      <Wrapper>
+        <Spacer big />
+        <Heading>
+          Your Augur Markets
+          <Spacer xsmall />
+          <small>These are Augur markets or draft you have created.</small>
+        </Heading>
+        <Spacer />
+        <Table>
+          <Tr className="head">
+            <Td style={{ width: "40%" }}>Market</Td>
+            <Td style={{ width: "22%" }}>Expiration</Td>
+            <Td style={{ width: "12%" }}>Status</Td>
+            <Td style={{ width: "18%" }}>Open Interest</Td>
+            <Td style={{ width: "18%" }}>Earnings</Td>
+          </Tr>
+          {data.markets.map(market => (
+            <TrLink to={`/market/${market.uid}`} key={market.uid}>
+              <Td>{market.description}</Td>
+              <Td>
+                {format(new Date(market.endTime), "MMMM d, yyyy h:mma ")}{" "}
+                {getTimezoneName()}
+              </Td>
+              <Td>
+                <MarketStatusBadge market={market} />
+              </Td>
+              <Td>-</Td>
+              <Td>-</Td>
+            </TrLink>
+          ))}
+        </Table>
+      </Wrapper>
+    );
+  });
 }

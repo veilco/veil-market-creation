@@ -30,10 +30,13 @@ function useDimensions() {
 
   useLayoutEffect(() => {
     if (node) {
-      const measure = () =>
+      console.log("Listening for measure");
+      const measure = () => (
+        console.log("Measuring"),
         window.requestAnimationFrame(() =>
           setDimensions(getDimensionObject(node))
-        );
+        )
+      );
       measure();
 
       window.addEventListener("resize", measure);

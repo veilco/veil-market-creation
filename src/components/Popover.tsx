@@ -12,14 +12,17 @@ export const PopoverContainer = styled.div`
   z-index: 15;
   width: 340px;
   margin-left: -170px;
+`;
 
-  padding-top: ${basePadding}px;
-
+const AnimationContainer = styled.div`
   opacity: 0;
+  position: relative;
   transform: scale(0.95) translateY(5px);
   transition: opacity 0.2s, transform 0.2s;
-  &.fade-enter-active,
-  &.fade-enter-done {
+
+  padding-top: ${basePadding}px;
+  .fade-enter-active &,
+  .fade-enter-done & {
     opacity: 1;
     transform: none;
   }
@@ -70,8 +73,8 @@ export function Popover({
       <TransitionGroup>
         {isOpen && (
           <CSSTransition classNames="fade" timeout={200}>
-            <PopoverContainer style={popoverStyles}>
-              <div ref={ref}>
+            <PopoverContainer style={popoverStyles} ref={ref}>
+              <AnimationContainer>
                 <OutsideClickHandler
                   onOutsideClick={() => setTimeout(onClose, 0)}
                 >
@@ -92,7 +95,7 @@ export function Popover({
                     {children}
                   </PopoverBox>
                 </OutsideClickHandler>
-              </div>
+              </AnimationContainer>
             </PopoverContainer>
           </CSSTransition>
         )}
