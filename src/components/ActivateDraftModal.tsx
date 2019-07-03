@@ -72,6 +72,7 @@ export default function ActivateDraftModal(props: Props) {
       store.eth.currentAddress
     );
 
+    // Legacy activation store
     const local = useLocalStore(
       source => ({
         repCost: undefined as BigNumber | undefined,

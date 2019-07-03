@@ -1,6 +1,10 @@
 import { ApolloServer, gql, IResolvers } from "apollo-server";
 import { GraphQLScalarType } from "graphql";
 import uuid from "uuid/v4";
+import Knex from "knex";
+import { BigNumber } from "bignumber.js";
+import { ethers } from "ethers";
+import decodeAugurLogs from "./decodeAugurLogs";
 
 interface Market {
   uid: string;
@@ -26,15 +30,39 @@ interface Market {
 
 type Context = {
   markets: Market[];
+  pg: Knex;
 };
 
+function createPg() {
+  const knexConfig = require("../../knexfile");
+  const pg = Knex({
+    ...knexConfig[process.env.NODE_ENV || "development"],
+    debug: true,
+    log: {
+      warn: (obj: any) => console.warn("KNEX WARN", obj),
+      error: (obj: any) => console.error("KNEX ERROR", obj),
+      debug: (obj: any) => {
+        if (obj.sql)
+          return console.debug("SQL: " + obj.sql.replace(/[\s]+/g, " "), {
+            bindings: obj.bindings
+          });
+        console.debug("KNEX DEBUG", obj);
+      },
+      deprecate: (obj: any) => console.debug("KNEX DEPRECATE", obj)
+    }
+  });
+  return pg;
+}
+
 const context = {
-  markets: []
+  markets: [],
+  pg: createPg()
 };
 
 const typeDefs = gql`
   scalar Date
   scalar JSON
+  scalar BigNumber
 
   enum MarketStatus {
     draft
@@ -57,13 +85,13 @@ const typeDefs = gql`
     endTime: Date
     tags: [String]
     category: String
-    marketCreatorFeeRate: String
+    marketCreatorFeeRate: BigNumber
     author: String
     status: MarketStatus
     metadata: JSON
-    numTicks: String
-    minPrice: String
-    maxPrice: String
+    numTicks: BigNumber
+    minPrice: BigNumber
+    maxPrice: BigNumber
     scalarDenomination: String
   }
 
@@ -75,13 +103,13 @@ const typeDefs = gql`
     endTime: Date
     tags: [String]
     category: String
-    marketCreatorFeeRate: String
+    marketCreatorFeeRate: BigNumber
     author: String
     signature: String
     metadata: JSON
-    minPrice: String
-    maxPrice: String
-    numTicks: String
+    minPrice: BigNumber
+    maxPrice: BigNumber
+    numTicks: BigNumber
     scalarDenomination: String
   }
 
@@ -103,44 +131,73 @@ const typeDefs = gql`
 
 const resolvers: IResolvers<any, Context> = {
   Query: {
-    markets: (_: any, args: { author: string }, ctx: Context) => {
-      return ctx.markets.filter(m => m.author === args.author);
+    markets: async (_: any, args: { author: string }, ctx: Context) => {
+      return await ctx.pg("markets").where("author", args.author);
     },
-    market: (_: any, args: { uid: string }, ctx: Context) => {
-      return ctx.markets.find(m => m.uid === args.uid);
+    market: async (_: any, args: { uid: string }, ctx: Context) => {
+      return await ctx
+        .pg("markets")
+        .where("uid", args.uid)
+        .first();
     }
   },
   Mutation: {
-    createMarket: (_: any, args: any, ctx: Context) => {
+    createMarket: async (_: any, args: any, ctx: Context) => {
       const { signature, ...market } = args.market;
-      // TODO: validate signature
-      ctx.markets.push({ ...market, status: "draft", uid: uuid() });
-      return market;
+      // TODO: validate input
+      const [inserted] = await ctx
+        .pg("markets")
+        .insert({
+          ...market,
+          tags: JSON.stringify(market.tags || []),
+          status: "draft",
+          uid: uuid()
+        })
+        .returning("*");
+      return inserted;
     },
-    updateMarket: (_: any, args: any, ctx: Context) => {
+    updateMarket: async (_: any, args: any, ctx: Context) => {
       const { signature, ...market } = args.market;
       const uid = args.uid;
-      // TODO: validate signature
-      ctx.markets.forEach(m => {
-        if (m.uid === uid) {
-          if (m.status !== "draft")
-            throw new Error("Cannot update market after activation");
-          Object.assign(m, market);
-        }
-      });
-      return ctx.markets.find(m => m.uid === uid);
+      const existing: Market = await ctx
+        .pg("markets")
+        .where("uid", uid)
+        .first();
+      if (!existing) throw new Error("Market not found");
+      if (existing.status !== "draft")
+        throw new Error("Cannot update market after activation");
+      // TODO: validate input
+      const [updated] = await ctx
+        .pg("markets")
+        .where("uid", uid)
+        .update({
+          ...market,
+          tags: JSON.stringify(market.tags || []),
+          updatedAt: new Date()
+        })
+        .returning("*");
+      console.log(updated);
+      return updated;
     },
-    activateMarket: (_: any, args: any, ctx: Context) => {
+    activateMarket: async (_: any, args: any, ctx: Context) => {
       const { uid, transactionHash } = args;
-      // TODO: validate signature
-      ctx.markets.forEach(m => {
-        if (m.uid === uid) {
-          if (m.status !== "draft")
-            throw new Error("Market is already activated");
-          Object.assign(m, { status: "activating", transactionHash });
-        }
-      });
-      return ctx.markets.find(m => m.uid === uid);
+      const existing: Market = await ctx
+        .pg("markets")
+        .where("uid", uid)
+        .first();
+      if (!existing) throw new Error("Market not found");
+      if (existing.status !== "draft")
+        throw new Error("Market is already activated");
+      // TODO: validate input
+      const [updated] = await ctx
+        .pg("markets")
+        .where("uid", uid)
+        .update({
+          status: "activating",
+          transactionHash
+        })
+        .returning("*");
+      return updated;
     }
   },
   Date: new GraphQLScalarType({
@@ -167,10 +224,60 @@ const resolvers: IResolvers<any, Context> = {
       }
       return undefined;
     }
+  }),
+  BigNumber: new GraphQLScalarType({
+    name: "BigNumber",
+    serialize: (bn: string) => new BigNumber(bn).toString(),
+    parseValue: (value: string) => {
+      if (value.match(/^[0-9]{0,78}(\.[0-9]{0,78})?$/)) return value;
+      return undefined;
+    },
+    parseLiteral(ast) {
+      if (
+        ast.kind === "StringValue" &&
+        ast.value.match(/^[0-9]{0,78}(\.[0-9]{0,78})?$/)
+      )
+        return ast.value;
+      return undefined;
+    }
   })
 };
 
+function getEthereumHttp() {
+  if (process.env.NETWORK_ID === "1")
+    return `https://eth-mainnet.alchemyapi.io/jsonrpc/${
+      process.env.ALCHEMY_KEY
+    }`;
+  return `https://eth-kovan.alchemyapi.io/jsonrpc/${process.env.ALCHEMY_KEY}`;
+}
+
 const server = new ApolloServer({ typeDefs, resolvers, context });
+const provider = new ethers.providers.JsonRpcProvider(getEthereumHttp());
+
+// Every five seconds, check if there are activating markets to update to active
+setInterval(async () => {
+  const activatingMarkets = await context
+    .pg("markets")
+    .where("status", "activating");
+  for (let market of activatingMarkets) {
+    const receipt = await provider.getTransactionReceipt(
+      market.transactionHash
+    );
+    if (receipt && receipt.logs) {
+      const logs = decodeAugurLogs(receipt.logs);
+      const creationLog = logs.find(log => log.name === "MarketCreated");
+      if (creationLog) {
+        await context
+          .pg("markets")
+          .where("uid", market.uid)
+          .update({
+            address: creationLog.values.market,
+            status: "active"
+          });
+      }
+    }
+  }
+}, 5000);
 
 server.listen().then(({ url }) => {
   console.log(`🚀  Server ready at ${url}`);

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { RouteComponentProps } from "react-router-dom";
 import { useQuery } from "react-apollo-hooks";
 import gql from "graphql-tag";
@@ -88,7 +88,7 @@ export function MarketStatusSection({ market }: { market: Market }) {
 export default function ViewMarket(
   props: RouteComponentProps<{ uid: string }>
 ) {
-  const { data, loading, error } = useQuery<{ market: Market }>(
+  const { data, loading, error, refetch } = useQuery<{ market: Market }>(
     gql`
       query GetMarket($uid: String!) {
         market(uid: $uid) {
@@ -112,6 +112,16 @@ export default function ViewMarket(
     `,
     { variables: { uid: props.match.params.uid } }
   );
+
+  useEffect(() => {
+    let interval: any;
+    if (data && data.market && data.market.status === "activating") {
+      interval = setInterval(refetch, 2000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [data, refetch]);
 
   const [isActivationModalOpen, setIsActivationModalOpen] = useState(false);
 
