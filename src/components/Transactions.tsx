@@ -85,8 +85,8 @@ interface Props {
 export default class ConsumerHeaderTransactions extends Component<Props> {
   transactionName(tx: Transaction) {
     return {
-      createMarket: "Market creation"
-    }[tx.type as "createMarket"];
+      activateDraftMarket: "Market activation"
+    }[tx.type as "activateDraftMarket"];
   }
 
   transactionLink(tx: Transaction) {

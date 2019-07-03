@@ -1,6 +1,6 @@
 export type MarketStatus = "draft" | "activating" | "active";
 
-export interface Market {
+interface BaseMarket {
   uid: string;
   description: string;
   details: string;
@@ -13,10 +13,29 @@ export interface Market {
   transactionHash?: string;
   status: MarketStatus;
   type: "yesno" | "scalar" | "categorical";
-  minPrice: string;
-  maxPrice: string;
-  scalarDenomination: string;
+  minPrice?: string;
+  maxPrice?: string;
+  scalarDenomination?: string;
+  numTicks?: string;
   metadata: {
     timezone: string;
   };
 }
+
+interface ScalarMarket extends BaseMarket {
+  type: "scalar";
+  minPrice: string;
+  maxPrice: string;
+  scalarDenomination: string;
+  numTicks: string;
+}
+
+interface YesNoMarket extends BaseMarket {
+  type: "yesno";
+  minPrice: undefined;
+  maxPrice: undefined;
+  scalarDenomination: undefined;
+  numTicks: undefined;
+}
+
+export type Market = ScalarMarket | YesNoMarket;

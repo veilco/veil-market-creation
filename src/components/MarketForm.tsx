@@ -178,6 +178,7 @@ export class MarketFormStore {
   @observable tags: string[];
   @observable category: string;
   @observable marketCreatorFeeRate: string;
+  @observable scalarPrecision: BigNumber | null = new BigNumber("0.01");
 
   @computed
   get isExpirationValid() {
@@ -194,7 +195,9 @@ export class MarketFormStore {
       this.scalarDenomination &&
       this.minPrice &&
       this.maxPrice &&
-      this.maxPrice.gt(this.minPrice)
+      this.maxPrice.gt(this.minPrice) &&
+      this.scalarPrecision &&
+      this.scalarPrecision.gt(0)
     );
   }
 
@@ -224,11 +227,18 @@ export class MarketFormStore {
     );
   }
 
+  @computed
+  get numTicks() {
+    if (!this.maxPrice || !this.minPrice || !this.scalarPrecision) return null;
+    return this.maxPrice.minus(this.minPrice).div(this.scalarPrecision);
+  }
+
   toParams() {
     const scalarFields = {
       maxPrice: this.maxPrice,
       minPrice: this.minPrice,
-      scalarDenomination: this.scalarDenomination
+      scalarDenomination: this.scalarDenomination,
+      numTicks: this.numTicks
     };
     return {
       type: this.type,
@@ -258,8 +268,12 @@ export class MarketFormStore {
     form.maxPrice = market.maxPrice ? new BigNumber(market.maxPrice) : null;
     form.tags = market.tags;
     form.category = market.category;
-    form.scalarDenomination = market.scalarDenomination;
+    form.scalarDenomination = market.scalarDenomination || "USD";
     form.marketCreatorFeeRate = market.marketCreatorFeeRate || "";
+    form.scalarPrecision =
+      market.numTicks && form.minPrice && form.maxPrice
+        ? form.maxPrice.minus(form.minPrice).div(market.numTicks)
+        : form.scalarPrecision;
     return form;
   }
 }
@@ -366,6 +380,29 @@ export default function MarketForm(props: Props) {
                 <InputUnit>{form.scalarDenomination}</InputUnit>
               </InputGroup>
             </div>
+            <Spacer big />
+            <Label>
+              Scalar market precision{" "}
+              <Help>
+                This value determines how many distinct outcomes between the
+                bounds reporters can choose for this market.
+              </Help>
+            </Label>
+            <Spacer small />
+            <InputGroup style={{ width: 150 }}>
+              <ParseInput
+                placeholder="0.01"
+                component={Input}
+                value={form.scalarPrecision}
+                onChange={val => (form.scalarPrecision = val || null)}
+                {...bnAdapter(
+                  bn => (bn ? bn.toString() : ""),
+                  str => new BigNumber(str)
+                )}
+                style={{ minWidth: 0 }}
+              />
+              <InputUnit>{form.scalarDenomination}</InputUnit>
+            </InputGroup>
           </Fragment>
         )}
         <Spacer big />

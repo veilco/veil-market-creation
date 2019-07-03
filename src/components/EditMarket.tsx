@@ -40,6 +40,7 @@ export default function EditMarket(
             resolutionSource
             tags
             category
+            numTicks
             minPrice
             maxPrice
             scalarDenomination
@@ -65,6 +66,7 @@ export default function EditMarket(
             resolutionSource
             tags
             category
+            numTicks
             minPrice
             maxPrice
             scalarDenomination
@@ -96,7 +98,6 @@ export default function EditMarket(
 
     if (error) return <>Error</>; // TODO
     if (!form.current && !loading && data) {
-      console.log(data);
       form.current = MarketFormStore.fromMarket(data.market);
     }
     if (loading || !form.current) return null;

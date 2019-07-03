@@ -15,6 +15,10 @@ interface Market {
   transactionHash?: string;
   status: "draft" | "activating" | "activated";
   type: "yesno" | "scalar" | "categorical";
+  numTicks?: string;
+  minPrice?: string;
+  maxPrice?: string;
+  scalarDenomination?: string;
   metadata: {
     timezone: string;
   };
@@ -57,6 +61,7 @@ const typeDefs = gql`
     author: String
     status: MarketStatus
     metadata: JSON
+    numTicks: String
     minPrice: String
     maxPrice: String
     scalarDenomination: String
@@ -76,6 +81,7 @@ const typeDefs = gql`
     metadata: JSON
     minPrice: String
     maxPrice: String
+    numTicks: String
     scalarDenomination: String
   }
 
@@ -134,6 +140,7 @@ const resolvers: IResolvers<any, Context> = {
           Object.assign(m, { status: "activating", transactionHash });
         }
       });
+      return ctx.markets.find(m => m.uid === uid);
     }
   },
   Date: new GraphQLScalarType({

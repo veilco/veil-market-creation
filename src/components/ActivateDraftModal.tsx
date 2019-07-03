@@ -1,10 +1,10 @@
-import React, { Component, Fragment } from "react";
-import { observable, action, computed, reaction } from "mobx";
+import React, { Fragment, useContext, useEffect, useCallback } from "react";
+import { reaction } from "mobx";
 import Button from "src/components/Button";
 import Spacer from "src/components/Spacer";
-import { colors, fade } from "src/styles";
+import { colors, fade, basePadding } from "src/styles";
 import Store from "src/store";
-import { observer, inject } from "mobx-react";
+import { useLocalStore } from "mobx-react";
 import Icon from "src/components/Icon";
 import Tooltip from "src/components/Tooltip";
 import { BigNumber } from "bignumber.js";
@@ -15,14 +15,18 @@ import {
   ModalFormContent,
   ReceiptItem
 } from "src/components/Form";
-import { round, fromWei } from "utils/units";
-const PlaceholderBox = require("components/PlaceholderBox").default;
+import { round, fromWei } from "src/utils/units";
 import styled from "@emotion/styled";
+import { Market } from "src/types";
+import PlaceholderBox from "src/components/PlaceholderBox";
+import StoreContext from "./StoreContext";
+import { useObserver } from "mobx-react-lite";
+import useErc20Balance from "src/hooks/useErc20Balance";
 
 interface Props {
-  consumerStore: ConsumerStore;
   store?: Store;
   onClose: any;
+  market: Market;
 }
 
 const TEN_18 = new BigNumber(10).pow(18);
@@ -37,108 +41,122 @@ export const EarningsItem = styled(ReceiptItem)`
   }
 `;
 
-@inject("store")
-@observer
-export default class ActivateDraftModal extends Component<Props> {
-  @observable repCost?: BigNumber = undefined;
-  @observable ethCost?: BigNumber = undefined;
-  @observable ethRequired?: BigNumber = undefined;
-  @observable augurAllowance?: BigNumber = undefined;
-  @observable activationStatus: "none" | "signing" | "activating" | "error" =
-    "none";
-  @observable buyStatus: "none" | "signing" | "buying" | "error" = "none";
-  teardown: any;
+const ErrorMessage = styled.div`
+  font-size: 16px;
+  padding: ${basePadding}px;
+  color: ${colors.red};
+  border: 2px solid ${colors.red};
+  border-radius: 4px;
+`;
 
-  componentDidMount() {
-    this.fetchAugurData();
+function NetworkWarning({ children }: { children: React.ReactChild }) {
+  return useObserver(() => {
+    const store = useContext(StoreContext);
+    if (store.eth.networkId !== Store.getDesiredNetworkId())
+      return (
+        <ErrorMessage>
+          <b>Wrong network</b>: switch over to{" "}
+          {Store.getDesiredNetworkId() === "1" ? "Mainnet" : "Kovan"} to
+          activate this market.
+        </ErrorMessage>
+      );
+    return <>{children}</>;
+  });
+}
 
-    this.teardown = reaction(
-      () => this.additionalRepNeededToActivateMarket,
-      () => {
-        this.getUniswapExchangeRate(this.additionalRepNeededToActivateMarket);
+export default function ActivateDraftModal(props: Props) {
+  return useObserver(() => {
+    const store = useContext(StoreContext);
+    const repBalance = useErc20Balance(
+      store.repAddress,
+      store.eth.currentAddress
+    );
+
+    const local = useLocalStore(
+      source => ({
+        repCost: undefined as BigNumber | undefined,
+        ethCost: undefined as BigNumber | undefined,
+        ethRequired: undefined as BigNumber | undefined,
+        augurAllowance: undefined as BigNumber | undefined,
+        activationStatus: "none" as "none" | "signing" | "activating" | "error",
+        buyStatus: "none" as "none" | "signing" | "buying" | "error",
+        get additionalRepNeededToActivateMarket() {
+          if (source.repBalance && local.repCost) {
+            if (source.repBalance.gte(local.repCost)) return new BigNumber(0);
+            else return local.repCost.minus(source.repBalance);
+          }
+          return null;
+        }
+      }),
+      {
+        repBalance
       }
     );
-  }
 
-  async fetchAugurData() {
-    const { consumerStore } = this.props;
-    [this.repCost, this.ethCost] = await consumerStore.getMarketCreationCost();
-  }
-
-  async getUniswapExchangeRate(amount: BigNumber) {
-    if (!amount) return;
-    this.ethRequired = await this.props.store.getUniswapExchangeRate(
-      "rep",
-      amount
-    );
-  }
-
-  componentWillUnmount() {
-    if (this.teardown) this.teardown();
-  }
-
-  @action
-  async activateDraftMarket() {
-    this.activationStatus = "signing";
-    try {
-      const emitter = this.props.consumerStore.activateDraftMarket(
-        this.props.consumerStore.marketWrapper.market
-      );
-      emitter.on("signed", () => (this.activationStatus = "activating"));
-      await emitter;
-      await this.props.consumerStore.fetchMarket();
-      this.props.onClose();
-    } catch (e) {
-      console.error(e);
-      this.activationStatus = "error";
-    }
-  }
-
-  @action
-  async buyRep() {
-    this.buyStatus = "signing";
-    try {
-      const emitter = this.props.store.buyFromUniswap(
+    const getUniswapExchangeRate = useCallback(async () => {
+      if (!local.additionalRepNeededToActivateMarket) return;
+      local.ethRequired = await store.getUniswapExchangeRate(
         "rep",
-        this.ethRequired,
-        this.additionalRepNeededToActivateMarket
+        local.additionalRepNeededToActivateMarket
       );
-      emitter.on("signed", () => (this.buyStatus = "buying"));
-      await emitter;
-    } catch (e) {
-      console.error(e);
-      this.buyStatus = "error";
-    }
-  }
+    }, []);
 
-  @computed
-  get repBalance() {
-    return this.props.consumerStore.store.balances.repBalance;
-  }
+    const fetchAugurCosts = useCallback(async () => {
+      [local.repCost, local.ethCost] = await store.getMarketCreationCost();
+    }, []);
 
-  @computed
-  get additionalRepNeededToActivateMarket() {
-    if (this.repBalance && this.repCost) {
-      if (this.repBalance.gte(this.repCost)) return new BigNumber(0);
-      else return this.repCost.minus(this.repBalance);
-    }
-    return null;
-  }
+    const buyRep = useCallback(async () => {
+      if (!local.ethRequired || !local.additionalRepNeededToActivateMarket)
+        return;
+      local.buyStatus = "signing";
+      try {
+        const emitter = store.buyFromUniswap(
+          "rep",
+          local.ethRequired,
+          local.additionalRepNeededToActivateMarket
+        );
+        emitter.on("signed", () => (local.buyStatus = "buying"));
+        await emitter;
+      } catch (e) {
+        console.error(e);
+        local.buyStatus = "error";
+      }
+    }, []);
 
-  render() {
-    const { marketWrapper } = this.props.consumerStore;
+    const activateMarket = useCallback(async () => {
+      local.activationStatus = "signing";
+      try {
+        const emitter = store.activateDraftMarket(props.market);
+        emitter.on("signed", () => (local.activationStatus = "activating"));
+        await emitter;
+        props.onClose();
+      } catch (e) {
+        console.error(e);
+        local.activationStatus = "error";
+      }
+    }, []);
+
+    useEffect(
+      () =>
+        reaction(
+          () => local.additionalRepNeededToActivateMarket,
+          getUniswapExchangeRate
+        ),
+      []
+    );
+
+    useEffect(() => void fetchAugurCosts(), []);
+
+    const { market } = props;
     return (
       <ModalForm>
         <ModalFormHeader>
           <h3>Activate market</h3>
           <Spacer small />
-          <h2>{marketWrapper.name}</h2>
+          <h2>{market.description}</h2>
         </ModalFormHeader>
         <ModalFormContent>
-          <div>
-            Make a deposit to deploy this market to Augur and activate it on
-            Veil.
-          </div>
+          <div>Make a deposit to deploy this market to Augur.</div>
           <Spacer size={1.5} />
           <div
             style={{
@@ -162,10 +180,12 @@ export default class ActivateDraftModal extends Component<Props> {
               </Tooltip>
             </span>
             <ReceiptUnderline />
-            {this.repCost ? (
+            {local.repCost ? (
               <span style={{ color: colors.textBlack }}>
-                <Tooltip content={`${this.repCost.div(TEN_18).toString()} REP`}>
-                  <b>{round(fromWei(this.repCost), 3)}</b> <small>REP</small>
+                <Tooltip
+                  content={`${local.repCost.div(TEN_18).toString()} REP`}
+                >
+                  <b>{round(fromWei(local.repCost), 3)}</b> <small>REP</small>
                 </Tooltip>
               </span>
             ) : (
@@ -185,10 +205,12 @@ export default class ActivateDraftModal extends Component<Props> {
               </Tooltip>
             </span>
             <ReceiptUnderline />
-            {this.ethCost ? (
+            {local.ethCost ? (
               <span style={{ color: colors.textBlack }}>
-                <Tooltip content={`${this.ethCost.div(TEN_18).toString()} ETH`}>
-                  <b>{round(fromWei(this.ethCost), 3)}</b> <small>ETH</small>
+                <Tooltip
+                  content={`${local.ethCost.div(TEN_18).toString()} ETH`}
+                >
+                  <b>{round(fromWei(local.ethCost), 3)}</b> <small>ETH</small>
                 </Tooltip>
               </span>
             ) : (
@@ -196,30 +218,34 @@ export default class ActivateDraftModal extends Component<Props> {
             )}
           </EarningsItem>
 
-          {this.additionalRepNeededToActivateMarket &&
-            this.additionalRepNeededToActivateMarket.lte(0) && (
+          {local.additionalRepNeededToActivateMarket &&
+            local.additionalRepNeededToActivateMarket.lte(0) && (
               <Fragment>
                 <Spacer size={2} />
-                {this.activationStatus !== "error" ? (
-                  <Button
-                    block
-                    onClick={() => this.activateDraftMarket()}
-                    disabled={this.activationStatus !== "none"}
-                  >
-                    {this.activationStatus === "none" && "Activate Market"}
-                    {this.activationStatus === "signing" &&
-                      "Please check your wallet..."}
-                    {this.activationStatus === "activating" &&
-                      "Activating market..."}
-                  </Button>
+                {local.activationStatus !== "error" ? (
+                  <NetworkWarning>
+                    <Button
+                      block
+                      onClick={activateMarket}
+                      disabled={local.activationStatus !== "none"}
+                    >
+                      {local.activationStatus === "none" && "Activate Market"}
+                      {local.activationStatus === "signing" &&
+                        "Please check your wallet..."}
+                      {local.activationStatus === "activating" &&
+                        "Activating market..."}
+                    </Button>
+                  </NetworkWarning>
                 ) : (
-                  <div>Something went wrong during market activation.</div>
+                  <ErrorMessage>
+                    Something went wrong during market activation.
+                  </ErrorMessage>
                 )}
               </Fragment>
             )}
         </ModalFormContent>
-        {this.additionalRepNeededToActivateMarket &&
-          this.additionalRepNeededToActivateMarket.gt(0) && (
+        {local.additionalRepNeededToActivateMarket &&
+          local.additionalRepNeededToActivateMarket.gt(0) && (
             <Fragment>
               {Store.getDesiredNetworkId() === "1" ? (
                 <ModalFormHeader
@@ -248,24 +274,24 @@ export default class ActivateDraftModal extends Component<Props> {
                   >
                     Buy{" "}
                     <Tooltip
-                      content={`${this.additionalRepNeededToActivateMarket
+                      content={`${local.additionalRepNeededToActivateMarket
                         .div(TEN_18)
                         .toString()} REP`}
                     >
                       {round(
-                        fromWei(this.additionalRepNeededToActivateMarket),
+                        fromWei(local.additionalRepNeededToActivateMarket),
                         3
                       )}{" "}
                       REP
                     </Tooltip>{" "}
                     for{" "}
-                    {this.ethRequired ? (
+                    {local.ethRequired ? (
                       <Tooltip
-                        content={`${this.ethRequired
+                        content={`${local.ethRequired
                           .div(TEN_18)
                           .toString()} ETH`}
                       >
-                        {round(fromWei(this.ethRequired), 3)} ETH
+                        {round(fromWei(local.ethRequired), 3)} ETH
                       </Tooltip>
                     ) : (
                       "0.000 ETH"
@@ -273,25 +299,32 @@ export default class ActivateDraftModal extends Component<Props> {
                     on 🦄 Uniswap.
                   </div>
                   <Spacer />
-                  {this.buyStatus !== "error" ? (
-                    <Button
-                      color={"#F737E4"}
-                      block
-                      disabled={this.buyStatus !== "none"}
-                      onClick={() => this.buyRep()}
-                    >
-                      {this.buyStatus === "none" &&
-                        `Buy ${round(
-                          fromWei(this.additionalRepNeededToActivateMarket),
-                          3
-                        )} REP`}
-                      {this.buyStatus === "signing" &&
-                        "Please check your wallet..."}
-                      {this.buyStatus === "buying" && "Buying REP..."}
-                    </Button>
-                  ) : (
-                    <div>Whoops, something went wrong when buying REP.</div>
+                  {local.buyStatus === "error" && (
+                    <>
+                      <ErrorMessage>
+                        Something went wrong when buying REP. Try again in a few
+                        seconds.
+                      </ErrorMessage>
+                      <Spacer />
+                    </>
                   )}
+
+                  <Button
+                    color={"#F737E4"}
+                    block
+                    disabled={local.buyStatus !== "none"}
+                    onClick={buyRep}
+                  >
+                    {(local.buyStatus === "none" ||
+                      local.buyStatus === "error") &&
+                      `Buy ${round(
+                        fromWei(local.additionalRepNeededToActivateMarket),
+                        3
+                      )} REP`}
+                    {local.buyStatus === "signing" &&
+                      "Please check your wallet..."}
+                    {local.buyStatus === "buying" && "Buying REP..."}
+                  </Button>
                 </ModalFormHeader>
               ) : (
                 <ModalFormHeader
@@ -312,20 +345,22 @@ export default class ActivateDraftModal extends Component<Props> {
                     market. Get free REP from Augur's faucet.
                   </div>
                   <Spacer size={1.5} />
-                  {this.buyStatus !== "error" ? (
+                  {local.buyStatus !== "error" ? (
                     <Button
                       color={colors.blue}
                       block
-                      disabled={this.buyStatus !== "none"}
-                      onClick={() => this.buyRep()}
+                      disabled={local.buyStatus !== "none"}
+                      onClick={buyRep}
                     >
-                      {this.buyStatus === "none" && "Get REP"}
-                      {this.buyStatus === "signing" &&
+                      {local.buyStatus === "none" && "Get REP"}
+                      {local.buyStatus === "signing" &&
                         "Please check your wallet..."}
-                      {this.buyStatus === "buying" && "Getting REP..."}
+                      {local.buyStatus === "buying" && "Getting REP..."}
                     </Button>
                   ) : (
-                    <div>Whoops, something went wrong when getting REP.</div>
+                    <ErrorMessage>
+                      Whoops, something went wrong when getting REP.
+                    </ErrorMessage>
                   )}
                 </ModalFormHeader>
               )}
@@ -333,5 +368,5 @@ export default class ActivateDraftModal extends Component<Props> {
           )}
       </ModalForm>
     );
-  }
+  });
 }

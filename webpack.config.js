@@ -43,7 +43,7 @@ module.exports = {
     process.env.NODE_ENV !== "production"
       ? new ErrorOverlayPlugin()
       : undefined,
-    new webpack.EnvironmentPlugin(["NODE_ENV", "API_URL"])
+    new webpack.EnvironmentPlugin(["NODE_ENV", "API_URL", "ALCHEMY_KEY"])
   ].filter(t => t),
   devServer: {
     contentBase: path.join(__dirname, "dist"),

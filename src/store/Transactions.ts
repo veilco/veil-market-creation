@@ -44,6 +44,7 @@ export class Transaction {
 }
 
 export default class Transactions extends EventEmitter {
+  public store: Store;
   transactions: IObservableArray<Transaction> = observable.array([], {
     deep: false
   });
@@ -51,8 +52,9 @@ export default class Transactions extends EventEmitter {
   @observable isOpen: boolean = false;
   pollTimeout: any;
 
-  constructor(public store: Store) {
+  constructor(store: Store) {
     super();
+    this.store = store;
     this.restore();
     if (this.pending.length > 0) this.poll();
     autorun(() => this.save());
@@ -88,20 +90,15 @@ export default class Transactions extends EventEmitter {
     if (!this.pending.length) return;
     this.pollTimeout = setTimeout(() => this.poll(), 2000);
 
-    const web3 = await this.store.getWeb3();
+    const provider = this.store.provider;
     for (let tx of this.pending) {
       if (tx.transactionHash) {
-        const receipt = await web3.getTransactionReceiptIfExistsAsync(
+        const receipt = await provider.getTransactionReceipt(
           tx.transactionHash
         );
         if (receipt) {
           if (receipt.status === 1) tx.finish();
           else tx.fail();
-        }
-      } else {
-        // TODO before mainnet: figure out a better way of tracking order fills
-        if (Date.now() - tx.createdAt.getTime() > ms("20s")) {
-          tx.finish();
         }
       }
     }

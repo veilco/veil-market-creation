@@ -17,6 +17,8 @@ import format from "date-fns/format";
 import { fromWei } from "src/utils/units";
 import Divider from "src/components/Divider";
 import Button from "./Button";
+import ActivateDraftModal from "./ActivateDraftModal";
+import Modal from "./Modal";
 
 const Label = styled.div`
   font-size: 12px;
@@ -100,6 +102,7 @@ export default function ViewMarket(
           resolutionSource
           tags
           category
+          numTicks
           minPrice
           maxPrice
           scalarDenomination
@@ -177,27 +180,40 @@ export default function ViewMarket(
           </div>
           <MarketBoxSidebar>
             <MarketStatusSection market={data.market} />
-            <Divider padded color={colors.lightBorderGrey} />
-            <Button
-              medium
-              block
-              onClick={() => setIsActivationModalOpen(true)}
-              color={colors.darkGreen}
-            >
-              Activate market
-            </Button>
-            <Spacer />
-            <Button
-              medium
-              block
-              to={`/edit/${data.market.uid}`}
-              color={colors.blue}
-            >
-              Edit draft
-            </Button>
+            {data.market.status === "draft" && (
+              <>
+                <Divider padded color={colors.lightBorderGrey} />
+                <Button
+                  medium
+                  block
+                  onClick={() => setIsActivationModalOpen(true)}
+                  color={colors.darkGreen}
+                >
+                  Activate market
+                </Button>
+                <Spacer />
+                <Button
+                  medium
+                  block
+                  to={`/edit/${data.market.uid}`}
+                  color={colors.blue}
+                >
+                  Edit draft
+                </Button>
+              </>
+            )}
           </MarketBoxSidebar>
         </MarketBox>
       </MarketContainer>
+      <Modal
+        isOpen={isActivationModalOpen}
+        onClose={() => setIsActivationModalOpen(false)}
+      >
+        <ActivateDraftModal
+          onClose={() => setIsActivationModalOpen(false)}
+          market={data.market}
+        />
+      </Modal>
     </MarketBackground>
   );
 }
