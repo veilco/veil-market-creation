@@ -1,6 +1,5 @@
 import React, { useRef, Fragment } from "react";
 import { observable, computed } from "mobx";
-import { observer } from "mobx-react";
 import Store from "src/store";
 import {
   Input,
@@ -36,56 +35,10 @@ const ResolutionSourceOption = styled.label`
   align-items: center;
 `;
 
-const ThemeOptions = styled.div`
-  display: flex;
-  align-items: flex-start;
-`;
-
-const ThemeOptionDot = styled.div<{ color: string; selected: boolean }>`
-  width: ${basePadding * 2}px;
-  height: ${basePadding * 2}px;
-  border-radius: ${basePadding}px;
-  margin-right: ${basePadding / 2}px;
-  background-color: ${props => props.color};
-  opacity: ${props => (props.selected ? 1 : 0.7)};
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-
-  &:hover {
-    opacity: 1;
-  }
-
-  & > i {
-    color: #fff;
-  }
-`;
-
 const Error = styled.div`
   color: ${colors.red};
   font-size: 14px;
 `;
-
-const ThemeOption = observer(
-  ({
-    color,
-    form,
-    theme
-  }: {
-    color: string;
-    form: MarketFormStore;
-    theme: string;
-  }) => (
-    <ThemeOptionDot
-      color={color}
-      selected={form.theme === theme}
-      onClick={() => (form.theme = theme)}
-    >
-      {form.theme === theme && <Icon block name="check" />}
-    </ThemeOptionDot>
-  )
-);
 
 function DenominationSelect(props: {
   onChange: (d: string) => void;

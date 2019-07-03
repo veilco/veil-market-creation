@@ -103,7 +103,7 @@ export default function MarketList() {
         <Heading>
           Your Augur Markets
           <Spacer xsmall />
-          <small>These are Augur markets or draft you have created.</small>
+          <small>These are Augur markets or drafts you have created.</small>
         </Heading>
         <Spacer />
         <Table>

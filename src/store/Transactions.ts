@@ -8,7 +8,6 @@ import {
 } from "mobx";
 import Store from "./index";
 import EventEmitter from "events";
-import ms from "ms";
 
 const randomId = () =>
   Math.random()

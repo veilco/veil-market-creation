@@ -1,5 +1,4 @@
 import styled from "@emotion/styled";
-import { css } from "@emotion/core";
 import { colors, basePadding, media } from "src/styles";
 
 export const MarketBackground = styled.div`
