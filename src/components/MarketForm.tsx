@@ -256,7 +256,7 @@ export default function MarketForm(props: Props) {
     );
 
     const categoryOptions =
-      !loading && !error && data
+      !loading && !error && data && data.categories
         ? data.categories.map(c => ({
             value: c.name,
             label: c.name,

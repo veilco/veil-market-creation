@@ -78,10 +78,10 @@ const Heading = styled.h1`
   }
 `;
 
-const NoResults = styled.div`
+const NoResults = styled.div<{ error?: boolean }>`
   text-align: center;
   font-size: 18px;
-  color: ${colors.textGrey};
+  color: ${props => (props.error ? colors.red : colors.textGrey)};
 `;
 
 const WalletWarning = styled.div`
@@ -131,7 +131,7 @@ export default function MarketList() {
           <BigLoader />
         </>
       );
-    if (error || !data) return <>Error</>;
+    const markets = error || !data ? [] : data.markets;
 
     return (
       <Wrapper>
@@ -186,7 +186,7 @@ export default function MarketList() {
               <Td style={{ width: "35%" }}>Expiration</Td>
               <Td style={{ width: "15%" }}>Status</Td>
             </Tr>
-            {data.markets.map(market => (
+            {markets.map(market => (
               <TrLink to={`/market/${market.uid}`} key={market.uid}>
                 <Td>{market.description}</Td>
                 <Td>
@@ -206,12 +206,23 @@ export default function MarketList() {
             ))}
           </Table>
           <Spacer big />
-          {data.markets.length === 0 && (
+          {!error && markets.length === 0 && (
             <NoResults>
               No markets or drafts yet.{" "}
               <Link to="/create">Create one now.</Link>
               <Spacer big />
             </NoResults>
+          )}
+          {error && (
+            <>
+              <NoResults error>
+                There was an error loading markets. Please{" "}
+                <TextLink onClick={() => (window.location = window.location)}>
+                  refresh
+                </TextLink>{" "}
+                in a few seconds.
+              </NoResults>
+            </>
           )}
         </TableWrapper>
       </Wrapper>
