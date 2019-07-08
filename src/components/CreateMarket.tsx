@@ -21,12 +21,13 @@ import {
 } from "src/components/ViewMarket";
 import StoreContext from "src/components/StoreContext";
 import { useObserver } from "mobx-react-lite";
+import ActionBlocker from "./ActionBlocker";
 
 export default function CreateMarket(props: RouteComponentProps) {
   return useObserver(() => {
     const createMarket = useMutation<{ createMarket: Market }>(
       gql`
-        mutation CreateMarket($market: MarketInput) {
+        mutation CreateMarket($market: MarketInput!) {
           createMarket(market: $market) {
             description
           }
@@ -38,12 +39,15 @@ export default function CreateMarket(props: RouteComponentProps) {
 
     const createMarketCallback = useCallback(async () => {
       setIsCreating(true);
+      const market = form.current.toParams();
+      const signature = await store.signMarket(market);
       await createMarket({
         variables: {
           market: {
-            ...form.current.toParams(),
+            ...market,
             author: store.eth.currentAddress
-          }
+          },
+          signature
         }
       });
       props.history.push("/");
@@ -58,12 +62,14 @@ export default function CreateMarket(props: RouteComponentProps) {
             <div>
               <MarketForm form={form.current} />
               <Spacer big />
-              <Button
-                onClick={createMarketCallback}
-                disabled={!form.current.isValid || isCreating}
-              >
-                {isCreating ? "Creating..." : "Create Draft"}
-              </Button>
+              <ActionBlocker blockerText="Unable to create draft">
+                <Button
+                  onClick={createMarketCallback}
+                  disabled={!form.current.isValid || isCreating}
+                >
+                  {isCreating ? "Creating..." : "Create Draft"}
+                </Button>
+              </ActionBlocker>
             </div>
             <MarketBoxSidebar>
               <MarketStatusHeading>

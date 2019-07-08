@@ -112,6 +112,10 @@ function Help(props: { children: React.ReactNode }) {
   );
 }
 
+function Required() {
+  return <span style={{ color: colors.red }}>*</span>;
+}
+
 interface Props {
   store?: Store;
   form: MarketFormStore;
@@ -186,7 +190,7 @@ export class MarketFormStore {
     return this.maxPrice.minus(this.minPrice).div(this.scalarPrecision);
   }
 
-  toParams() {
+  toParams(): Partial<Market> {
     const scalarFields = {
       maxPrice: this.maxPrice,
       minPrice: this.minPrice,
@@ -197,7 +201,7 @@ export class MarketFormStore {
       type: this.type,
       description: this.description,
       details: this.details,
-      endTime: this.endTime,
+      endTime: this.endTime.toISOString(),
       resolutionSource: this.resolutionSource,
       metadata: { timezone: this.timezone },
       tags: this.tags,
@@ -206,7 +210,7 @@ export class MarketFormStore {
         this.marketCreatorFeeRate || "0"
       ).toString(),
       ...(this.type === "scalar" ? scalarFields : {})
-    };
+    } as Partial<Market>;
   }
 
   static fromMarket(market: Market) {
@@ -271,7 +275,9 @@ export default function MarketForm(props: Props) {
           </PositionButton>
         </ButtonGroup>
         <Spacer big />
-        <Label>Market question</Label>
+        <Label>
+          Market question <Required />
+        </Label>
         <Spacer small />
         <Observer>
           {() => (
@@ -287,7 +293,9 @@ export default function MarketForm(props: Props) {
         {form.type === "scalar" && (
           <Fragment>
             <Spacer big />
-            <Label>Unit of measurement</Label>
+            <Label>
+              Unit of measurement <Required />
+            </Label>
             <Spacer small />
             <DenominationSelect
               value={form.scalarDenomination}
@@ -296,7 +304,9 @@ export default function MarketForm(props: Props) {
               }
             />
             <Spacer big />
-            <Label>Scalar market range</Label>
+            <Label>
+              Scalar market range <Required />
+            </Label>
             <Spacer small />
             <div style={{ display: "flex", alignItems: "center" }}>
               <InputGroup style={{ width: 150 }}>
@@ -335,7 +345,7 @@ export default function MarketForm(props: Props) {
             </div>
             <Spacer big />
             <Label>
-              Scalar market precision{" "}
+              Scalar market precision <Required />{" "}
               <Help>
                 This value determines how many distinct outcomes between the
                 bounds reporters can choose for this market.
@@ -424,7 +434,7 @@ export default function MarketForm(props: Props) {
         )}
         <Spacer big />
         <Label>
-          Resolution rules
+          Resolution rules <Required />
           <Spacer small inline />
           <Help>
             Resolution rules help clarify your market to traders and reporters.
@@ -450,7 +460,7 @@ export default function MarketForm(props: Props) {
         </Observer>
         <Spacer big />
         <Label>
-          Category
+          Category <Required />
           <Spacer small inline />
           <Help>TODO</Help>
         </Label>
@@ -465,6 +475,7 @@ export default function MarketForm(props: Props) {
             </InputGroup>
           )}
         </Observer>
+        TODO: pull category/tag info from augur
         <Spacer big />
         <Label>
           Tags
@@ -489,13 +500,14 @@ export default function MarketForm(props: Props) {
               onChange={(tags: { value: string }[]) =>
                 (form.tags = (tags || []).map(t => t.value))
               }
+              noOptionsMessage={() => "Type to add tags"}
               isMulti={true}
             />
           )}
         </Observer>
         <Spacer big />
         <Label>
-          Creator fee
+          Creator fee <Required />
           <Spacer small inline />
           <Help>
             A percentage from 0% to 10%, the creator fee is the share of open
@@ -515,6 +527,7 @@ export default function MarketForm(props: Props) {
             </InputGroup>
           )}
         </Observer>
+        TODO: links for common choices
       </div>
     );
   });

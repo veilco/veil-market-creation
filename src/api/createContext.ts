@@ -1,6 +1,7 @@
 import Knex from "knex";
 import { ethers } from "ethers";
 import { Context } from "./types";
+import Augur from "augur.js";
 
 function createPg() {
   const knexConfig = require("../../knexfile");
@@ -31,11 +32,20 @@ function getEthereumHttp() {
   return `https://eth-kovan.alchemyapi.io/jsonrpc/${process.env.ALCHEMY_KEY}`;
 }
 
-export default function createContext(): Context {
+export default async function createContext(): Promise<Context> {
   const provider = new ethers.providers.JsonRpcProvider(getEthereumHttp());
+  const augurUrl = "ws://predictions.market:9001";
+  const augur = new Augur();
+  await new Promise((resolve, reject) => {
+    augur.connect({ augurNode: augurUrl }, (err, res) => {
+      if (err) reject(err);
+      resolve(res);
+    });
+  });
 
   return {
     provider,
-    pg: createPg()
+    pg: createPg(),
+    augur: new Augur()
   };
 }

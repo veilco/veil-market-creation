@@ -1,5 +1,6 @@
 import Knex from "knex";
 import { ethers } from "ethers";
+import { Augur } from "augur.js";
 
 export interface Market {
   uid: string;
@@ -26,4 +27,5 @@ export interface Market {
 export type Context = {
   pg: Knex;
   provider: ethers.providers.JsonRpcProvider;
+  augur: Augur;
 };

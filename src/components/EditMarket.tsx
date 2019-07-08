@@ -54,8 +54,12 @@ export default function EditMarket(
 
     const updateMarket = useMutation<{ updateMarket: Market }>(
       gql`
-        mutation UpdateMarket($uid: String!, $market: MarketInput) {
-          updateMarket(uid: $uid, market: $market) {
+        mutation UpdateMarket(
+          $uid: String!
+          $market: MarketInput!
+          $signature: Signature!
+        ) {
+          updateMarket(uid: $uid, market: $market, signature: $signature) {
             uid
             description
             author
@@ -82,13 +86,16 @@ export default function EditMarket(
     const updateMarketCallback = useCallback(async () => {
       if (!data || !form.current) return;
       setIsCreating(true);
+      const market = form.current.toParams();
+      const signature = await store.signMarket(market);
       await updateMarket({
         variables: {
           uid: data.market.uid,
           market: {
-            ...form.current.toParams(),
+            ...market,
             author: store.eth.currentAddress
-          }
+          },
+          signature
         }
       });
       props.history.push(`/market/${data.market.uid}`);

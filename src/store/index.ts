@@ -14,6 +14,7 @@ import PromiseEmitter from "src/utils/PromiseEmitter";
 import { when, computed } from "mobx";
 import getRepAddress from "src/utils/getRepAddress";
 import gql from "graphql-tag";
+import format from "date-fns/format";
 
 const universeAbi = [
   "function createScalarMarket(uint256 endTime, uint256 feePerEthInWei, address denominationToken, address designatedReporterAddress, int256 minPrice, int256 maxPrice, uint256 numTicks, bytes32 topic, string description, string extraInfo)",
@@ -91,6 +92,21 @@ export default class Store {
       universe.getOrCacheMarketCreationCost()
     ]);
     return strings.map(str => new BigNumber(str));
+  }
+
+  async signMarket(market: Partial<Market>) {
+    const timestamp = new Date();
+    const message = `By signing this message, you prove ownership over the address ${
+      this.eth.currentAddress
+    }.\n\nMarket question: ${market.description}\n\nMarket details:\n${
+      market.details
+    }\n\nResolution time: ${new Date(
+      market.endTime!
+    ).toISOString()}\n\nCurrent time: ${timestamp.toISOString()}`;
+    const signature = await this.signer.signMessage(message);
+    (window as any).ethers = ethers;
+    (window as any).signature = { signature, message, timestamp };
+    return { signature, message, timestamp };
   }
 
   activateDraftMarket(market: Market) {

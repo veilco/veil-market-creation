@@ -11,6 +11,8 @@ import { colors, basePadding } from "src/styles";
 import Spacer from "src/components/Spacer";
 import StoreContext from "src/components/StoreContext";
 import { useObserver } from "mobx-react-lite";
+import BigLoader from "src/components/BigLoader";
+import TextLink from "./TextLink";
 
 const Wrapper = styled.div`
   padding: 0 ${basePadding * 2}px;
@@ -68,6 +70,21 @@ const Heading = styled.h1`
   }
 `;
 
+const NoResults = styled.div`
+  text-align: center;
+  font-size: 18px;
+  color: ${colors.textGrey};
+`;
+
+const WalletWarning = styled.div`
+  border-radius: 5px;
+  border: 1px solid ${colors.red};
+  color: ${colors.red};
+  padding: ${basePadding * 1.5}px;
+  font-size: 18px;
+  line-height: 1.4;
+`;
+
 export default function MarketList() {
   return useObserver(() => {
     const store = useContext(StoreContext);
@@ -94,12 +111,55 @@ export default function MarketList() {
       if (store.eth.currentAddress) refetch();
     }, [store.eth.currentAddress]);
 
-    if (loading) return <>Loading...</>;
+    if (loading)
+      return (
+        <>
+          <Spacer big />
+          <BigLoader />
+        </>
+      );
     if (error || !data) return <>Error</>;
 
     return (
       <Wrapper>
         <Spacer big />
+        {store.eth.hasLoadedCurrentAddressFirstTime && (
+          <>
+            {!store.eth.isConnected && (
+              <>
+                <WalletWarning>
+                  <b>Warning:</b> It looks like you don't have an Ethereum
+                  wallet installed. You can install a wallet like{" "}
+                  <a href="https://metamask.io/">Metamask</a>,{" "}
+                  <a href="https://wallet.coinbase.com/">Coinbase Wallet</a>, or{" "}
+                  <a href="https://tokenmint.io/blog/web-3-enabled-ethereum-wallets-and-browsers.html">
+                    others
+                  </a>{" "}
+                  to create markets using this tool.
+                </WalletWarning>
+                <Spacer big />
+              </>
+            )}
+            {store.eth.isConnected &&
+              (!store.eth.isUnlocked || !store.eth.isEnabled) && (
+                <>
+                  <WalletWarning>
+                    <b>Note:</b> Your wallet is locked. To see the markets and
+                    drafts you've created,{" "}
+                    {store.eth.isEnabled ? (
+                      "unlock your wallet"
+                    ) : (
+                      <TextLink onClick={() => store.eth.enable()}>
+                        unlock your wallet
+                      </TextLink>
+                    )}
+                    .
+                  </WalletWarning>
+                  <Spacer big />
+                </>
+              )}
+          </>
+        )}
         <Heading>
           Your Augur Markets
           <Spacer xsmall />
@@ -129,6 +189,13 @@ export default function MarketList() {
             </TrLink>
           ))}
         </Table>
+        <Spacer big />
+        {data.markets.length === 0 && (
+          <NoResults>
+            No markets or drafts yet. <Link to="/create">Create one now.</Link>
+            <Spacer big />
+          </NoResults>
+        )}
       </Wrapper>
     );
   });

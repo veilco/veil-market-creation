@@ -3,6 +3,8 @@ import { GraphQLScalarType } from "graphql";
 import uuid from "uuid/v4";
 import { BigNumber } from "bignumber.js";
 import { Market, Context } from "./types";
+import { ethers } from "ethers";
+import { differenceInMinutes } from "date-fns";
 
 export const typeDefs = gql`
   scalar Date
@@ -19,6 +21,12 @@ export const typeDefs = gql`
     yesno
     scalar
     categorical
+  }
+
+  input Signature {
+    message: String!
+    signature: String!
+    timestamp: Date!
   }
 
   type Market {
@@ -38,6 +46,7 @@ export const typeDefs = gql`
     minPrice: BigNumber
     maxPrice: BigNumber
     scalarDenomination: String
+    openInterest: BigNumber
   }
 
   input MarketInput {
@@ -64,8 +73,12 @@ export const typeDefs = gql`
   }
 
   type Mutation {
-    createMarket(market: MarketInput): Market
-    updateMarket(uid: String!, market: MarketInput): Market
+    createMarket(market: MarketInput!, signature: Signature!): Market
+    updateMarket(
+      uid: String!
+      market: MarketInput!
+      signature: Signature!
+    ): Market
     activateMarket(
       uid: String!
       transactionHash: String!
@@ -73,6 +86,32 @@ export const typeDefs = gql`
     ): Market
   }
 `;
+
+interface Signature {
+  message: string;
+  signature: string;
+  timestamp: Date;
+}
+
+function validateSignature(market: Market, signature: Signature) {
+  // Check for validity of message
+  if (
+    signature.message.indexOf(market.description) < 0 ||
+    signature.message.indexOf(signature.timestamp.toISOString()) < 0
+  )
+    throw new Error("Signature does not match market");
+  // Check that timestamp is sufficiently recent (to prevent signature reuse)
+  if (differenceInMinutes(new Date(), signature.timestamp) > 10)
+    throw new Error("Signature is too old");
+  // Check that the signer is correct
+  const recoveredAddress = ethers.utils.recoverAddress(
+    ethers.utils.hashMessage(signature.message),
+    signature.signature
+  );
+  if (recoveredAddress.toLowerCase() !== market.author.toLowerCase())
+    throw new Error("Invalid signature");
+  return true;
+}
 
 export const resolvers: IResolvers<any, Context> = {
   Query: {
@@ -88,8 +127,9 @@ export const resolvers: IResolvers<any, Context> = {
   },
   Mutation: {
     createMarket: async (_: any, args: any, ctx: Context) => {
-      const { signature, ...market } = args.market;
+      const { signature, market } = args;
       // TODO: validate input
+      validateSignature(market, signature);
       const [inserted] = await ctx
         .pg("markets")
         .insert({
@@ -102,12 +142,13 @@ export const resolvers: IResolvers<any, Context> = {
       return inserted;
     },
     updateMarket: async (_: any, args: any, ctx: Context) => {
-      const { signature, ...market } = args.market;
+      const { signature, market } = args;
       const uid = args.uid;
       const existing: Market = await ctx
         .pg("markets")
         .where("uid", uid)
         .first();
+      validateSignature(existing, signature);
       if (!existing) throw new Error("Market not found");
       if (existing.status !== "draft")
         throw new Error("Cannot update market after activation");
@@ -121,7 +162,6 @@ export const resolvers: IResolvers<any, Context> = {
           updatedAt: new Date()
         })
         .returning("*");
-      console.log(updated);
       return updated;
     },
     activateMarket: async (_: any, args: any, ctx: Context) => {

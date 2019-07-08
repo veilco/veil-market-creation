@@ -44,6 +44,13 @@ export default function App() {
             h6 {
               margin: 0;
             }
+
+            a,
+            a:hover,
+            a:visited,
+            a:active {
+              color: inherit;
+            }
           `}
         />
         <Header />

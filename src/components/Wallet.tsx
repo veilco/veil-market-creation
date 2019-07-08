@@ -44,9 +44,16 @@ export default function Wallet() {
       );
     if (!store.eth.isUnlocked || !store.eth.isEnabled)
       return (
-        <WalletContainer clickable onClick={() => store.eth.enable()}>
+        <WalletContainer
+          clickable={!store.eth.isEnabled}
+          onClick={store.eth.isEnabled ? undefined : () => store.eth.enable()}
+        >
           Wallet locked
-          <span>Click here to unlock</span>
+          {store.eth.isEnabled ? (
+            <span>Unlock to connect</span>
+          ) : (
+            <span>Click here to unlock</span>
+          )}
         </WalletContainer>
       );
     return (
