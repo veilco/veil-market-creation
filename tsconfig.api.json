@@ -6,8 +6,7 @@
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "lib": ["es2017"],
-    "target": "esnext",
-    "noEmit": true,
+    "target": "es5",
     "moduleResolution": "node",
     "noImplicitAny": true,
     "noUnusedLocals": true,
@@ -17,7 +16,7 @@
     "sourceMap": true,
     "skipLibCheck": true,
     "strictNullChecks": true,
-    "outDir": "dist",
+    "outDir": "dist/api",
     "typeRoots": ["node_modules/@types", "typings"],
     "baseUrl": "src",
     "paths": {

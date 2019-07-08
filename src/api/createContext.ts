@@ -12,6 +12,7 @@ function createPg() {
       warn: (obj: any) => console.warn("KNEX WARN", obj),
       error: (obj: any) => console.error("KNEX ERROR", obj),
       debug: (obj: any) => {
+        if (process.env.NODE_ENV === "production") return;
         if (obj.sql)
           return console.debug("SQL: " + obj.sql.replace(/[\s]+/g, " "), {
             bindings: obj.bindings

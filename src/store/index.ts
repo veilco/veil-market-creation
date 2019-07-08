@@ -14,7 +14,6 @@ import PromiseEmitter from "src/utils/PromiseEmitter";
 import { when, computed } from "mobx";
 import getRepAddress from "src/utils/getRepAddress";
 import gql from "graphql-tag";
-import format from "date-fns/format";
 import encodeCategory from "src/utils/encodeCategory";
 
 const universeAbi = [
@@ -30,7 +29,7 @@ function createApollo() {
     dataIdFromObject: (obj: any) => obj.uid
   });
   const link = new HttpLink({
-    uri: process.env.API_URL
+    uri: process.env.API_URL + "/graphql"
   });
 
   return new ApolloClient({

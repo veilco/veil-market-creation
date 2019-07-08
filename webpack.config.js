@@ -3,12 +3,19 @@ const webpack = require("webpack");
 const HtmlWebPackPlugin = require("html-webpack-plugin");
 const ErrorOverlayPlugin = require("error-overlay-webpack-plugin");
 const path = require("path");
+const BundleAnalyzerPlugin = require("webpack-bundle-analyzer")
+  .BundleAnalyzerPlugin;
+
+const isProduction = process.env.NODE_ENV === "production";
 
 module.exports = {
-  entry: ["./src/index.ts"],
+  entry: isProduction
+    ? ["babel-polyfill", "./src/index.ts"]
+    : ["./src/index.ts"],
   mode: process.env.NODE_ENV || "development",
   output: {
-    publicPath: "/"
+    publicPath: "/",
+    path: path.join(__dirname, "./dist/static")
   },
   module: {
     rules: [
@@ -40,15 +47,18 @@ module.exports = {
       template: "./src/index.html",
       filename: "./index.html"
     }),
-    process.env.NODE_ENV !== "production"
-      ? new ErrorOverlayPlugin()
-      : undefined,
+    isProduction ? undefined : new ErrorOverlayPlugin(),
     new webpack.EnvironmentPlugin([
       "NODE_ENV",
       "API_URL",
       "NETWORK_ID",
       "ALCHEMY_KEY"
-    ])
+    ]),
+    new BundleAnalyzerPlugin({
+      analyzerMode: "static",
+      openAnalyzer: false,
+      reportFilename: "../webpack-report.html"
+    })
   ].filter(t => t),
   devServer: {
     contentBase: path.join(__dirname, "dist"),
