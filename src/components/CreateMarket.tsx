@@ -35,22 +35,28 @@ export default function CreateMarket(props: RouteComponentProps) {
       `
     );
     const [isCreating, setIsCreating] = useState(false);
+    const [isError, setIsError] = useState(false);
     const store = useContext(StoreContext);
 
     const createMarketCallback = useCallback(async () => {
-      setIsCreating(true);
-      const market = form.current.toParams();
-      const signature = await store.signMarket(market);
-      await createMarket({
-        variables: {
-          market: {
-            ...market,
-            author: store.eth.currentAddress
-          },
-          signature
-        }
-      });
-      props.history.push("/");
+      try {
+        setIsCreating(true);
+        const market = form.current.toParams();
+        const signature = await store.signMarket(market);
+        await createMarket({
+          variables: {
+            market: {
+              ...market,
+              author: store.eth.currentAddress
+            },
+            signature
+          }
+        });
+        props.history.push("/");
+      } catch (e) {
+        setIsError(true);
+        setIsCreating(false);
+      }
     }, [setIsCreating, createMarket]);
 
     const form = useRef(new MarketFormStore());
@@ -62,6 +68,15 @@ export default function CreateMarket(props: RouteComponentProps) {
             <div>
               <MarketForm form={form.current} />
               <Spacer big />
+              {isError && (
+                <>
+                  <span style={{ color: colors.red }}>
+                    There was an error while saving your draft. Please try
+                    again.
+                  </span>
+                  <Spacer />
+                </>
+              )}
               <ActionBlocker blockerText="Unable to create draft">
                 <Button
                   onClick={createMarketCallback}

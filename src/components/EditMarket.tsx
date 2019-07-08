@@ -80,26 +80,32 @@ export default function EditMarket(
         }
       `
     );
-    const [isCreating, setIsCreating] = useState(false);
+    const [isUpdating, setIsUpdating] = useState(false);
+    const [isError, setIsError] = useState(false);
     const store = useContext(StoreContext);
 
     const updateMarketCallback = useCallback(async () => {
-      if (!data || !form.current) return;
-      setIsCreating(true);
-      const market = form.current.toParams();
-      const signature = await store.signMarket(market);
-      await updateMarket({
-        variables: {
-          uid: data.market.uid,
-          market: {
-            ...market,
-            author: store.eth.currentAddress
-          },
-          signature
-        }
-      });
-      props.history.push(`/market/${data.market.uid}`);
-    }, [setIsCreating, updateMarket]);
+      try {
+        if (!data || !form.current) return;
+        setIsUpdating(true);
+        const market = form.current.toParams();
+        const signature = await store.signMarket(market);
+        await updateMarket({
+          variables: {
+            uid: data.market.uid,
+            market: {
+              ...market,
+              author: store.eth.currentAddress
+            },
+            signature
+          }
+        });
+        props.history.push(`/market/${data.market.uid}`);
+      } catch (e) {
+        setIsError(true);
+        setIsUpdating(false);
+      }
+    }, [setIsUpdating, updateMarket]);
 
     const form = useRef<MarketFormStore | null>(null);
 
@@ -116,11 +122,20 @@ export default function EditMarket(
             <div>
               <MarketForm form={form.current} />
               <Spacer big />
+              {isError && (
+                <>
+                  <span style={{ color: colors.red }}>
+                    There was an error while saving your draft. Please try
+                    again.
+                  </span>
+                  <Spacer />
+                </>
+              )}
               <Button
                 onClick={updateMarketCallback}
-                disabled={!form.current.isValid || isCreating}
+                disabled={!form.current.isValid || isUpdating}
               >
-                {isCreating ? "Updating..." : "Update Draft"}
+                {isUpdating ? "Updating..." : "Update Draft"}
               </Button>
             </div>
             <MarketBoxSidebar>

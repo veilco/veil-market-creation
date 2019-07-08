@@ -45,6 +45,9 @@ export const Label = styled.label`
 
 export const ButtonGroup = styled.div`
   display: flex;
+  ${media.phone} {
+    flex-direction: column;
+  }
 `;
 
 export const PositionButton = styled.button<{

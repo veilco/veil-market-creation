@@ -4,7 +4,7 @@ import Spacer from "src/components/Spacer";
 import Button from "src/components/Button";
 import Icon from "src/components/Icon";
 import Transactions from "src/components/Transactions";
-import { colors, basePadding, headerHeight } from "src/styles";
+import { colors, basePadding, headerHeight, media } from "src/styles";
 import { Link } from "react-router-dom";
 import StoreContext from "./StoreContext";
 import Wallet from "src/components/Wallet";
@@ -17,6 +17,12 @@ const HeaderContainer = styled.div`
   height: ${headerHeight}px;
   background-color: #fff;
   border-bottom: 1px solid ${colors.lightBorderGrey};
+
+  ${media.phone} {
+    & .your-markets {
+      display: none;
+    }
+  }
 `;
 
 const LogoContainer = styled.div`
@@ -35,7 +41,9 @@ export default function Header() {
         </Link>
       </LogoContainer>
       <Spacer inline />
-      <Link to="/">Your Markets</Link>
+      <Link className="your-markets" to="/">
+        Your Markets
+      </Link>
       <div style={{ flex: 1 }} />
       <Button small to="/create">
         <Icon name="add" block /> Create

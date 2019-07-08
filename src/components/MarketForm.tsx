@@ -25,6 +25,9 @@ import { Market } from "src/types";
 import Flex from "src/components/Flex";
 import Tooltip from "src/components/Tooltip";
 import { useObserver, Observer } from "mobx-react-lite";
+import gql from "graphql-tag";
+import { useQuery } from "react-apollo-hooks";
+import TextLink from "src/components/TextLink";
 
 const CreatableSelect: typeof Select = require("react-select/creatable")
   .default;
@@ -238,6 +241,42 @@ export class MarketFormStore {
 export default function MarketForm(props: Props) {
   return useObserver(() => {
     const form = props.form;
+
+    const { data, loading, error } = useQuery<{
+      categories: { name: string; tags: string[] }[];
+    }>(
+      gql`
+        query GetCategories {
+          categories {
+            name
+            tags
+          }
+        }
+      `
+    );
+
+    const categoryOptions =
+      !loading && !error && data
+        ? data.categories.map(c => ({
+            value: c.name,
+            label: c.name,
+            tags: c.tags
+          }))
+        : [];
+    const selectedCategory = categoryOptions.find(
+      c => c.value === form.category
+    );
+    type TagOption = { value: string; label: string };
+    let tagOptionsByTag: { [tagName: string]: TagOption } = {};
+    let tagOptions: TagOption[] = [];
+
+    if (selectedCategory)
+      selectedCategory.tags.forEach(tag => {
+        const tagOption = { value: tag, label: tag };
+        tagOptions.push(tagOption);
+        tagOptionsByTag[tag] = tagOption;
+      });
+
     return (
       <div>
         <Label>
@@ -258,7 +297,9 @@ export default function MarketForm(props: Props) {
             <h3>Yes or no</h3>
             <Check in={form.type === "yesno"} />
           </PositionButton>
-          <Spacer big inline />
+          <div>
+            <Spacer big inline />
+          </div>
           <PositionButton
             selected={form.type === "scalar"}
             onClick={() => (form.type = "scalar")}
@@ -267,7 +308,9 @@ export default function MarketForm(props: Props) {
             <h3>Pick a range</h3>
             <Check in={form.type === "scalar"} />
           </PositionButton>
-          <Spacer big inline />
+          <div>
+            <Spacer big inline />
+          </div>
           <PositionButton selected={false} disabled>
             <h2>Categorical</h2>
             <h3>😞 Not supported yet</h3>
@@ -462,25 +505,38 @@ export default function MarketForm(props: Props) {
         <Label>
           Category <Required />
           <Spacer small inline />
-          <Help>TODO</Help>
+          <Help>
+            Choose a broad category that this market belongs to to help people
+            find your market.
+          </Help>
         </Label>
         <Spacer small />
-        <Observer>
-          {() => (
-            <InputGroup>
-              <Input
-                onChange={e => (form.category = e.target.value)}
-                value={form.category}
-              />
-            </InputGroup>
-          )}
-        </Observer>
-        TODO: pull category/tag info from augur
+        <CreatableSelect
+          styles={{
+            control: base => ({
+              ...base,
+              border: `2px solid ${colors.borderGrey}`,
+              borderRadius: 4,
+              backgroundColor: colors.white,
+              padding: `${basePadding / 2}px 0`,
+              "&:hover": { borderColor: colors.grey }
+            })
+          }}
+          value={selectedCategory}
+          options={categoryOptions}
+          onChange={(newVal: any) =>
+            (form.category = newVal ? newVal.value : "")
+          }
+          noOptionsMessage={() => "Type to create a category"}
+        />
         <Spacer big />
         <Label>
           Tags
           <Spacer small inline />
-          <Help>TODO</Help>
+          <Help>
+            Choose tags that are specific to your market. If your
+            category is "Sports", tags might be "Basketball" or "NBA".
+          </Help>
         </Label>
         <Spacer small />
         <Observer>
@@ -496,10 +552,11 @@ export default function MarketForm(props: Props) {
                   "&:hover": { borderColor: colors.grey }
                 })
               }}
-              value={(form.tags || []).map(tag => ({ value: tag, label: tag }))}
+              value={(form.tags || []).map(tag => tagOptionsByTag[tag])}
               onChange={(tags: { value: string }[]) =>
                 (form.tags = (tags || []).map(t => t.value))
               }
+              options={tagOptions}
               noOptionsMessage={() => "Type to add tags"}
               isMulti={true}
             />
@@ -515,19 +572,36 @@ export default function MarketForm(props: Props) {
           </Help>
         </Label>
         <Spacer small />
-        <Observer>
-          {() => (
-            <InputGroup style={{ maxWidth: "100px" }}>
-              <Input
-                onChange={e => (form.marketCreatorFeeRate = e.target.value)}
-                value={form.marketCreatorFeeRate}
-                style={{ minWidth: 0 }}
-              />
-              <InputUnit>%</InputUnit>
-            </InputGroup>
-          )}
-        </Observer>
-        TODO: links for common choices
+        <Flex alignCenter>
+          <Observer>
+            {() => (
+              <InputGroup style={{ maxWidth: "100px" }}>
+                <Input
+                  onChange={e => (form.marketCreatorFeeRate = e.target.value)}
+                  value={form.marketCreatorFeeRate}
+                  style={{ minWidth: 0 }}
+                />
+                <InputUnit>%</InputUnit>
+              </InputGroup>
+            )}
+          </Observer>
+          <Spacer inline big />
+          <span style={{ color: colors.textGrey }}>
+            <small>Suggested values:</small>
+            <br />
+            <TextLink onClick={() => (form.marketCreatorFeeRate = "0")}>
+              0.0%
+            </TextLink>
+            <Spacer inline />
+            <TextLink onClick={() => (form.marketCreatorFeeRate = "0.5")}>
+              0.5%
+            </TextLink>
+            <Spacer inline />
+            <TextLink onClick={() => (form.marketCreatorFeeRate = "1")}>
+              1.0%
+            </TextLink>
+          </span>
+        </Flex>
       </div>
     );
   });

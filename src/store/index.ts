@@ -15,6 +15,7 @@ import { when, computed } from "mobx";
 import getRepAddress from "src/utils/getRepAddress";
 import gql from "graphql-tag";
 import format from "date-fns/format";
+import encodeCategory from "src/utils/encodeCategory";
 
 const universeAbi = [
   "function createScalarMarket(uint256 endTime, uint256 feePerEthInWei, address denominationToken, address designatedReporterAddress, int256 minPrice, int256 maxPrice, uint256 numTicks, bytes32 topic, string description, string extraInfo)",
@@ -122,6 +123,7 @@ export default class Store {
       const convertForEthers = (num: string | BigNumber) =>
         new ethers.utils.BigNumber(num.toString());
       const fee = convertForEthers(toWei(market.marketCreatorFeeRate).div(100));
+      const category = encodeCategory(market.category);
       const endTime = Math.floor(new Date(market.endTime).getTime() / 1000);
       let tx;
       if (market.type === "yesno")
@@ -130,7 +132,7 @@ export default class Store {
           fee,
           cashAddress,
           this.eth.currentAddress,
-          "0x0000000000000000000000000000000000000000000000000000000000000000", // Category
+          category,
           market.description,
           JSON.stringify({
             longDescription: market.details,
@@ -151,7 +153,7 @@ export default class Store {
           convertForEthers(market.minPrice),
           convertForEthers(market.maxPrice),
           market.numTicks,
-          "0x7665696c00000000000000000000000000000000000000000000000000000000", // Veil tag
+          category,
           market.description,
           JSON.stringify({
             longDescription: market.details,

@@ -3,7 +3,7 @@ import { useQuery } from "react-apollo-hooks";
 import gql from "graphql-tag";
 import { Link } from "react-router-dom";
 import styled from "@emotion/styled";
-import format from "date-fns/format";
+import { format, formatDistanceToNow } from "date-fns";
 import getTimezoneName from "src/utils/getTimezoneName";
 import MarketStatusBadge from "src/components/MarketStatusBadge";
 import { Market } from "src/types";
@@ -16,6 +16,11 @@ import TextLink from "./TextLink";
 
 const Wrapper = styled.div`
   padding: 0 ${basePadding * 2}px;
+`;
+
+const TableWrapper = styled.div`
+  overflow: auto;
+  padding: 1px;
 `;
 
 const Tr = styled.div`
@@ -45,6 +50,8 @@ const Table = styled.div`
   border-style: hidden;
   box-shadow: 0 0 0 1px ${colors.borderGrey};
   overflow: hidden;
+  min-width: 540px;
+  margin-right: 1px;
 
   ${Td} {
     padding: ${basePadding}px;
@@ -83,6 +90,11 @@ const WalletWarning = styled.div`
   padding: ${basePadding * 1.5}px;
   font-size: 18px;
   line-height: 1.4;
+`;
+
+const RelativeTime = styled.div`
+  font-size: 14px;
+  color: ${colors.textGrey};
 `;
 
 export default function MarketList() {
@@ -166,36 +178,41 @@ export default function MarketList() {
           <small>These are Augur markets or drafts you have created.</small>
         </Heading>
         <Spacer />
-        <Table>
-          <Tr className="head">
-            <Td style={{ width: "40%" }}>Market</Td>
-            <Td style={{ width: "22%" }}>Expiration</Td>
-            <Td style={{ width: "12%" }}>Status</Td>
-            <Td style={{ width: "18%" }}>Open Interest</Td>
-            <Td style={{ width: "18%" }}>Earnings</Td>
-          </Tr>
-          {data.markets.map(market => (
-            <TrLink to={`/market/${market.uid}`} key={market.uid}>
-              <Td>{market.description}</Td>
-              <Td>
-                {format(new Date(market.endTime), "MMMM d, yyyy h:mma ")}{" "}
-                {getTimezoneName()}
-              </Td>
-              <Td>
-                <MarketStatusBadge market={market} />
-              </Td>
-              <Td>-</Td>
-              <Td>-</Td>
-            </TrLink>
-          ))}
-        </Table>
-        <Spacer big />
-        {data.markets.length === 0 && (
-          <NoResults>
-            No markets or drafts yet. <Link to="/create">Create one now.</Link>
-            <Spacer big />
-          </NoResults>
-        )}
+        <TableWrapper>
+          <Table>
+            <Tr className="head">
+              <Td style={{ width: "50%" }}>Market</Td>
+              <Td style={{ width: "35%" }}>Expiration</Td>
+              <Td style={{ width: "15%" }}>Status</Td>
+            </Tr>
+            {data.markets.map(market => (
+              <TrLink to={`/market/${market.uid}`} key={market.uid}>
+                <Td>{market.description}</Td>
+                <Td>
+                  {format(new Date(market.endTime), "MMMM d, yyyy h:mma ")}{" "}
+                  {getTimezoneName()}
+                  <br />
+                  <RelativeTime>
+                    {formatDistanceToNow(new Date(market.endTime), {
+                      addSuffix: true
+                    })}
+                  </RelativeTime>
+                </Td>
+                <Td>
+                  <MarketStatusBadge market={market} />
+                </Td>
+              </TrLink>
+            ))}
+          </Table>
+          <Spacer big />
+          {data.markets.length === 0 && (
+            <NoResults>
+              No markets or drafts yet.{" "}
+              <Link to="/create">Create one now.</Link>
+              <Spacer big />
+            </NoResults>
+          )}
+        </TableWrapper>
       </Wrapper>
     );
   });

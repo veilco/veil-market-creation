@@ -5,11 +5,32 @@ import { BigNumber } from "bignumber.js";
 import { Market, Context } from "./types";
 import { ethers } from "ethers";
 import { differenceInMinutes } from "date-fns";
+import { addresses } from "augur-core-abi";
 
 export const typeDefs = gql`
   scalar Date
   scalar JSON
   scalar BigNumber
+
+  type Query {
+    markets(author: String!): [Market]
+    market(uid: String!): Market
+    categories: [Category]
+  }
+
+  type Mutation {
+    createMarket(market: MarketInput!, signature: Signature!): Market
+    updateMarket(
+      uid: String!
+      market: MarketInput!
+      signature: Signature!
+    ): Market
+    activateMarket(
+      uid: String!
+      transactionHash: String!
+      signature: String!
+    ): Market
+  }
 
   enum MarketStatus {
     draft
@@ -23,10 +44,9 @@ export const typeDefs = gql`
     categorical
   }
 
-  input Signature {
-    message: String!
-    signature: String!
-    timestamp: Date!
+  type Category {
+    name: String!
+    tags: [String]
   }
 
   type Market {
@@ -67,23 +87,10 @@ export const typeDefs = gql`
     scalarDenomination: String
   }
 
-  type Query {
-    markets(author: String!): [Market]
-    market(uid: String!): Market
-  }
-
-  type Mutation {
-    createMarket(market: MarketInput!, signature: Signature!): Market
-    updateMarket(
-      uid: String!
-      market: MarketInput!
-      signature: Signature!
-    ): Market
-    activateMarket(
-      uid: String!
-      transactionHash: String!
-      signature: String!
-    ): Market
+  input Signature {
+    message: String!
+    signature: String!
+    timestamp: Date!
   }
 `;
 
@@ -123,6 +130,25 @@ export const resolvers: IResolvers<any, Context> = {
         .pg("markets")
         .where("uid", args.uid)
         .first();
+    },
+    categories: async (_: any, _args: any, ctx: Context) => {
+      const networkId = "1";
+      const categories: {
+        categoryName: string;
+        tags: { tagName: string }[];
+      }[] = await new Promise((resolve, reject) =>
+        ctx.augur.markets.getCategories(
+          { universe: addresses[networkId].Universe },
+          (err, res) => (err ? reject(err) : resolve(res))
+        )
+      );
+      console.log(categories);
+      return categories
+        .map(category => ({
+          name: category.categoryName,
+          tags: category.tags.map(t => t.tagName).sort()
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name));
     }
   },
   Mutation: {

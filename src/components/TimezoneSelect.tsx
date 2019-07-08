@@ -103,12 +103,12 @@ export default function TimezoneSelect({
           backgroundColor: colors.white,
           padding: `${basePadding / 2}px 0`,
           "&:hover": { borderColor: colors.grey },
-          width: 320,
+          width: 300,
           fontSize: "14px"
         }),
         menu: base => ({
           ...base,
-          width: 350
+          width: 330
         }),
         option: base => ({
           ...base,
