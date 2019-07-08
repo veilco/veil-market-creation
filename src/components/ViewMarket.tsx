@@ -16,9 +16,10 @@ import { colors } from "src/styles";
 import format from "date-fns/format";
 import { fromWei } from "src/utils/units";
 import Divider from "src/components/Divider";
-import Button from "./Button";
-import ActivateDraftModal from "./ActivateDraftModal";
-import Modal from "./Modal";
+import Button from "src/components/Button";
+import ActivateDraftModal from "src/components/ActivateDraftModal";
+import Modal from "src/components/Modal";
+import Error404 from "src/components/Error404";
 
 const Label = styled.div`
   font-size: 12px;
@@ -125,8 +126,8 @@ export default function ViewMarket(
 
   const [isActivationModalOpen, setIsActivationModalOpen] = useState(false);
 
-  if (loading) return <>Loading...</>;
-  if (error || !data || !data.market) return <>Error</>;
+  if (loading) return null;
+  if (error || !data || !data.market) return <Error404 />;
 
   return (
     <MarketBackground>

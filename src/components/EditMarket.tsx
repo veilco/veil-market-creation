@@ -21,6 +21,7 @@ import {
 } from "src/components/ViewMarket";
 import { useObserver } from "mobx-react-lite";
 import StoreContext from "src/components/StoreContext";
+import Error404 from "src/components/Error404";
 
 export default function EditMarket(
   props: RouteComponentProps<{ uid: string }>
@@ -109,7 +110,7 @@ export default function EditMarket(
 
     const form = useRef<MarketFormStore | null>(null);
 
-    if (error) return <>Error</>; // TODO
+    if (error) return <Error404 />; // TODO
     if (!form.current && !loading && data) {
       form.current = MarketFormStore.fromMarket(data.market);
     }
