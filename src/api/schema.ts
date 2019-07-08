@@ -154,7 +154,6 @@ export const resolvers: IResolvers<any, Context> = {
   Mutation: {
     createMarket: async (_: any, args: any, ctx: Context) => {
       const { signature, market } = args;
-      // TODO: validate input
       validateSignature(market, signature);
       const [inserted] = await ctx
         .pg("markets")
@@ -178,7 +177,6 @@ export const resolvers: IResolvers<any, Context> = {
       if (!existing) throw new Error("Market not found");
       if (existing.status !== "draft")
         throw new Error("Cannot update market after activation");
-      // TODO: validate input
       const [updated] = await ctx
         .pg("markets")
         .where("uid", uid)
@@ -199,7 +197,8 @@ export const resolvers: IResolvers<any, Context> = {
       if (!existing) throw new Error("Market not found");
       if (existing.status !== "draft")
         throw new Error("Market is already activated");
-      // TODO: validate input
+      if (!transactionHash.match(/0x[0-9a-f]{64}/))
+        throw new Error("Transaction hash is invalid");
       const [updated] = await ctx
         .pg("markets")
         .where("uid", uid)

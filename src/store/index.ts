@@ -29,7 +29,7 @@ function createApollo() {
     dataIdFromObject: (obj: any) => obj.uid
   });
   const link = new HttpLink({
-    uri: process.env.API_URL + "/graphql"
+    uri: (process.env.API_URL || "") + "/graphql"
   });
 
   return new ApolloClient({
