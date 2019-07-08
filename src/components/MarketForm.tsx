@@ -263,12 +263,21 @@ export default function MarketForm(props: Props) {
             tags: c.tags
           }))
         : [];
-    const selectedCategory = categoryOptions.find(
-      c => c.value === form.category
-    );
+    let selectedCategory = categoryOptions.find(c => c.value === form.category);
+    if (form.category && !selectedCategory) {
+      selectedCategory = {
+        value: form.category,
+        label: form.category,
+        tags: []
+      };
+      categoryOptions.push(selectedCategory);
+    }
+
     type TagOption = { value: string; label: string };
     let tagOptionsByTag: { [tagName: string]: TagOption } = {};
     let tagOptions: TagOption[] = [];
+    const getTagOption = (tag: string) =>
+      tagOptionsByTag[tag] || { value: tag, label: tag };
 
     if (selectedCategory)
       selectedCategory.tags.forEach(tag => {
@@ -534,34 +543,30 @@ export default function MarketForm(props: Props) {
           Tags
           <Spacer small inline />
           <Help>
-            Choose tags that are specific to your market. If your
-            category is "Sports", tags might be "Basketball" or "NBA".
+            Choose tags that are specific to your market. If your category is
+            "Sports", tags might be "Basketball" or "NBA".
           </Help>
         </Label>
         <Spacer small />
-        <Observer>
-          {() => (
-            <CreatableSelect
-              styles={{
-                control: base => ({
-                  ...base,
-                  border: `2px solid ${colors.borderGrey}`,
-                  borderRadius: 4,
-                  backgroundColor: colors.white,
-                  padding: `${basePadding / 2}px 0`,
-                  "&:hover": { borderColor: colors.grey }
-                })
-              }}
-              value={(form.tags || []).map(tag => tagOptionsByTag[tag])}
-              onChange={(tags: { value: string }[]) =>
-                (form.tags = (tags || []).map(t => t.value))
-              }
-              options={tagOptions}
-              noOptionsMessage={() => "Type to add tags"}
-              isMulti={true}
-            />
-          )}
-        </Observer>
+        <CreatableSelect
+          styles={{
+            control: base => ({
+              ...base,
+              border: `2px solid ${colors.borderGrey}`,
+              borderRadius: 4,
+              backgroundColor: colors.white,
+              padding: `${basePadding / 2}px 0`,
+              "&:hover": { borderColor: colors.grey }
+            })
+          }}
+          value={(form.tags || []).map(getTagOption)}
+          onChange={(tags: { value: string }[]) =>
+            (form.tags = (tags || []).map(t => t.value))
+          }
+          options={tagOptions}
+          noOptionsMessage={() => "Type to add tags"}
+          isMulti={true}
+        />
         <Spacer big />
         <Label>
           Creator fee <Required />
