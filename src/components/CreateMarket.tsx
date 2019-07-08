@@ -27,8 +27,9 @@ export default function CreateMarket(props: RouteComponentProps) {
   return useObserver(() => {
     const createMarket = useMutation<{ createMarket: Market }>(
       gql`
-        mutation CreateMarket($market: MarketInput!) {
-          createMarket(market: $market) {
+        mutation CreateMarket($market: MarketInput!, $signature: Signature!) {
+          createMarket(market: $market, signature: $signature) {
+            uid
             description
           }
         }
@@ -43,7 +44,7 @@ export default function CreateMarket(props: RouteComponentProps) {
         setIsCreating(true);
         const market = form.current.toParams();
         const signature = await store.signMarket(market);
-        await createMarket({
+        const newMarket = await createMarket({
           variables: {
             market: {
               ...market,
@@ -52,7 +53,8 @@ export default function CreateMarket(props: RouteComponentProps) {
             signature
           }
         });
-        props.history.push("/");
+        const uid = newMarket.data && newMarket.data.createMarket.uid;
+        if (uid) props.history.push(`/market/${uid}`);
       } catch (e) {
         setIsError(true);
         setIsCreating(false);
