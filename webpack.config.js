@@ -53,7 +53,7 @@ module.exports = {
       "NODE_ENV",
       "API_URL",
       "NETWORK_ID",
-      "ALCHEMY_KEY"
+      "ETHEREUM_HTTP"
     ]),
     new BundleAnalyzerPlugin({
       analyzerMode: "static",

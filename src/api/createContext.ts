@@ -26,11 +26,7 @@ function createPg() {
 }
 
 function getEthereumHttp() {
-  if (process.env.NETWORK_ID === "1")
-    return `https://eth-mainnet.alchemyapi.io/jsonrpc/${
-      process.env.ALCHEMY_KEY
-    }`;
-  return `https://eth-kovan.alchemyapi.io/jsonrpc/${process.env.ALCHEMY_KEY}`;
+  return process.env.ETHEREUM_HTTP;
 }
 
 export default async function createContext(): Promise<Context> {
