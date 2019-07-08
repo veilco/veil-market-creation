@@ -14,7 +14,7 @@ function promisify<T = any>(func: any, thisContext: any = undefined) {
   };
 }
 
-const REFRESH_DELAY = 3000;
+const REFRESH_DELAY = 1000;
 
 export default class Eth {
   store: Store;
@@ -60,7 +60,7 @@ export default class Eth {
     } catch (e) {
       throw new Error("Error enabling ethereum");
     }
-    this.isEnabled = await this.getIsEnabled();
+    this.refresh();
   }
 
   stop() {
