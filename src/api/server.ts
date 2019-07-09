@@ -26,13 +26,13 @@ async function start() {
     })
   );
 
-  // app.use((req, res, next) => {
-  //   // The 'x-forwarded-proto' check is for Heroku
-  //   if (!req.secure && req.get("x-forwarded-proto") !== "https") {
-  //     return res.redirect("https://" + req.get("host") + req.url);
-  //   }
-  //   next();
-  // });
+  app.use((req, res, next) => {
+    // The 'x-forwarded-proto' check is for Heroku
+    if (!req.secure && req.get("x-forwarded-proto") !== "https") {
+      return res.redirect("https://" + req.get("host") + req.url);
+    }
+    next();
+  });
 
   const apollo = new ApolloServer({ typeDefs, resolvers, context });
   (apollo as any).applyMiddleware({ app });
