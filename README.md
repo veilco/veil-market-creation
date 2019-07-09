@@ -15,7 +15,7 @@ yarn
 cp .env.example .env
 ```
 
-You'll need an Ethereum node to connect to, so update the `ETHEREUM_HTTP` variable in `.env` to a publicly-accessible Ethereum node RPC URL (such as an Infura or Alchemy endpoint).
+You'll need an Ethereum node to connect to, so update the `ETHEREUM_HTTP` variable in `.env` to a publicly-accessible Ethereum node RPC URL (such as an [Infura](https://infura.io/) or [Alchemy](https://alchemyapi.io/) endpoint).
 
 You'll also need a local PostgreSQL database named `veil_market_creation` with a `veil` user (or you can tweak `knexfile.js` to match your environment).
 
