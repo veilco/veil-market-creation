@@ -44,4 +44,5 @@ heroku git:remote -a veil-market-creation
 heroku addons:create heroku-postgresql:hobby-dev
 heroku config:set NETWORK_ID=1 ETHEREUM_HTTP=[YOUR_ETHEREUM_ENDPOINT] YARN_PRODUCTION=true
 git push heroku master
+heroku ps:scale worker=1
 ```
