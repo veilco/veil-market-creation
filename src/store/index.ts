@@ -199,23 +199,21 @@ export default class Store {
     return fastWei;
   }
 
-  getExchangeAddress(currency: "dai" | "rep") {
+  getExchangeAddress(currency: "rep") {
     const addressesByNetworkId: {
-      [networkId: string]: { dai: string; rep: string };
+      [networkId: string]: { rep: string };
     } = {
       1: {
-        dai: "0x09cabec1ead1c0ba254b09efb3ee13841712be14",
         rep: "0x48b04d2a05b6b604d8d5223fd1984f191ded51af"
       },
       42: {
-        dai: "0x62f247353e70d5f5e7d4f7c6ed1dbcb4e332782d",
         rep: "0x4ca9baaffcc2692db2b33ab2ab2edda86c2c4a4d"
       }
     };
     return addressesByNetworkId[Store.getDesiredNetworkId()][currency];
   }
 
-  async getUniswapExchangeRate(currency: "dai" | "rep", amount: BigNumber) {
+  async getUniswapExchangeRate(currency: "rep", amount: BigNumber) {
     const exchangeAddress = this.getExchangeAddress(currency);
     const abi = [
       "function ethToTokenSwapInput(uint256 min_tokens, uint256 deadline)",
@@ -230,7 +228,7 @@ export default class Store {
   }
 
   buyFromUniswap(
-    currency: "rep" | "dai",
+    currency: "rep",
     ethRequired: BigNumber,
     tokenAmount: BigNumber
   ) {
