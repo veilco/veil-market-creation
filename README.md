@@ -6,7 +6,7 @@ Use it here: [https://create.veil.co](https://create.veil.co)
 
 ### Development
 
-To run locally, you must clone this repo and install the dependencies:
+To run locally, you must clone this repo and install the dependencies (we prefer using [yarn](https://yarnpkg.com/en/)):
 
 ```bash
 git clone https://github.com/veilco/veil-market-creation.git
