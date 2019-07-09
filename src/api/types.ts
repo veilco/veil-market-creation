@@ -19,6 +19,7 @@ export interface Market {
   minPrice?: string;
   maxPrice?: string;
   scalarDenomination?: string;
+  activatedAt: Date;
   metadata: {
     timezone: string;
   };

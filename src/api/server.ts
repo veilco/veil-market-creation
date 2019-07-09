@@ -3,7 +3,6 @@ import path from "path";
 import { ApolloServer } from "apollo-server-express";
 import createContext from "./createContext";
 import { typeDefs, resolvers } from "./schema";
-import work from "./worker";
 import RateLimit from "express-rate-limit";
 import express from "express";
 import compression from "compression";
@@ -41,8 +40,6 @@ async function start() {
   app.get("*", (_, res) => {
     res.sendFile(path.join(__dirname, "../../dist/static", "index.html"));
   });
-
-  work(context);
 
   const port = process.env.PORT || 4000;
   app.listen(port, () => {

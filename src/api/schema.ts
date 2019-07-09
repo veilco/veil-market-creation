@@ -215,6 +215,7 @@ export const resolvers: IResolvers<any, Context> = {
         .where("uid", uid)
         .update({
           status: "activating",
+          activatedAt: new Date(),
           transactionHash
         })
         .returning("*");
