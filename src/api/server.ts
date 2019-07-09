@@ -38,6 +38,9 @@ async function start() {
   (apollo as any).applyMiddleware({ app });
 
   app.use(express.static(path.join(__dirname, "../../dist/static")));
+  app.get("*", (_, res) => {
+    res.sendFile(path.join(__dirname, "../../dist/static", "index.html"));
+  });
 
   work(context);
 

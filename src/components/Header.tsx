@@ -17,6 +17,9 @@ const HeaderContainer = styled.div`
   height: ${headerHeight}px;
   background-color: #fff;
   border-bottom: 1px solid ${colors.lightBorderGrey};
+  & .your-markets {
+    text-decoration: none;
+  }
 
   ${media.phone} {
     & .your-markets {
@@ -40,8 +43,8 @@ export default function Header() {
           <img src={logo} />
         </Link>
       </LogoContainer>
-      <Spacer inline />
       <Link className="your-markets" to="/">
+        <Spacer inline big />
         Your Markets
       </Link>
       <div style={{ flex: 1 }} />
