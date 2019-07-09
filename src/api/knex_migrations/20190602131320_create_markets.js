@@ -6,9 +6,9 @@ exports.up = async function(knex, Promise) {
       .unique()
       .index()
       .notNullable();
-    t.string("description").notNullable();
-    t.string("details").notNullable();
-    t.string("resolutionSource");
+    t.text("description").notNullable();
+    t.text("details").notNullable();
+    t.text("resolutionSource");
     t.datetime("endTime").notNullable();
     t.jsonb("tags").defaultTo("[]");
     t.string("category").notNullable();
