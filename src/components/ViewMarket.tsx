@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { RouteComponentProps } from "react-router-dom";
 import { useQuery } from "react-apollo-hooks";
 import gql from "graphql-tag";
@@ -20,6 +20,8 @@ import Button from "src/components/Button";
 import ActivateDraftModal from "src/components/ActivateDraftModal";
 import Modal from "src/components/Modal";
 import Error404 from "src/components/Error404";
+import StoreContext from "src/components/StoreContext";
+import { useObserver } from "mobx-react-lite";
 
 const Label = styled.div`
   font-size: 12px;
@@ -89,6 +91,8 @@ export function MarketStatusSection({ market }: { market: Market }) {
 export default function ViewMarket(
   props: RouteComponentProps<{ uid: string }>
 ) {
+  return useObserver(() => {
+
   const { data, loading, error, refetch } = useQuery<{ market: Market }>(
     gql`
       query GetMarket($uid: String!) {
@@ -113,6 +117,7 @@ export default function ViewMarket(
     `,
     { variables: { uid: props.match.params.uid } }
   );
+  const store = useContext(StoreContext);
 
   useEffect(() => {
     let interval: any;
@@ -191,7 +196,7 @@ export default function ViewMarket(
           </div>
           <MarketBoxSidebar>
             <MarketStatusSection market={data.market} />
-            {data.market.status === "draft" && (
+            {data.market.status === "draft" && data.market.author === store.eth.currentAddress && (
               <>
                 <Divider padded color={colors.lightBorderGrey} />
                 <Button
@@ -227,4 +232,6 @@ export default function ViewMarket(
       </Modal>
     </MarketBackground>
   );
+
+})
 }
