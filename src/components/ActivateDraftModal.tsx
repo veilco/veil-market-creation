@@ -97,7 +97,6 @@ export default function ActivateDraftModal(props: Props) {
     const getUniswapExchangeRate = useCallback(async () => {
       if (!local.additionalRepNeededToActivateMarket) return;
       local.ethRequired = await store.getUniswapExchangeRate(
-        "rep",
         local.additionalRepNeededToActivateMarket
       );
     }, []);
@@ -112,7 +111,6 @@ export default function ActivateDraftModal(props: Props) {
       local.buyStatus = "signing";
       try {
         const emitter = store.buyFromUniswap(
-          "rep",
           local.ethRequired,
           local.additionalRepNeededToActivateMarket
         );

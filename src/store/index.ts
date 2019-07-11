@@ -199,22 +199,18 @@ export default class Store {
     return fastWei;
   }
 
-  getExchangeAddress(currency: "rep") {
+  getRepExchangeAddress() {
     const addressesByNetworkId: {
-      [networkId: string]: { rep: string };
+      [networkId: string]: string;
     } = {
-      1: {
-        rep: "0x48b04d2a05b6b604d8d5223fd1984f191ded51af"
-      },
-      42: {
-        rep: "0x4ca9baaffcc2692db2b33ab2ab2edda86c2c4a4d"
-      }
+      1: "0x48b04d2a05b6b604d8d5223fd1984f191ded51af",
+      42: "0x4ca9baaffcc2692db2b33ab2ab2edda86c2c4a4d"
     };
-    return addressesByNetworkId[Store.getDesiredNetworkId()][currency];
+    return addressesByNetworkId[Store.getDesiredNetworkId()];
   }
 
-  async getUniswapExchangeRate(currency: "rep", amount: BigNumber) {
-    const exchangeAddress = this.getExchangeAddress(currency);
+  async getUniswapExchangeRate(amount: BigNumber) {
+    const exchangeAddress = this.getRepExchangeAddress();
     const abi = [
       "function ethToTokenSwapInput(uint256 min_tokens, uint256 deadline)",
       "function getEthToTokenOutputPrice(uint256 tokens_bought) constant returns (uint256)"
@@ -227,14 +223,10 @@ export default class Store {
     );
   }
 
-  buyFromUniswap(
-    currency: "rep",
-    ethRequired: BigNumber,
-    tokenAmount: BigNumber
-  ) {
+  buyFromUniswap(ethRequired: BigNumber, tokenAmount: BigNumber) {
     return PromiseEmitter.await(async emit => {
       let txHash;
-      const exchangeAddress = this.getExchangeAddress(currency);
+      const exchangeAddress = this.getRepExchangeAddress();
       const abi = [
         "function ethToTokenSwapInput(uint256 min_tokens, uint256 deadline)",
         "function getEthToTokenOutputPrice(uint256 tokens_bought) returns (uint256)"
