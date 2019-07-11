@@ -42,7 +42,7 @@ To deploy to heroku, you'll need to create an app, attach a database, and set a 
 heroku apps:create veil-market-creation
 heroku git:remote -a veil-market-creation
 heroku addons:create heroku-postgresql:hobby-dev
-heroku config:set NETWORK_ID=1 ETHEREUM_HTTP=[YOUR_ETHEREUM_ENDPOINT] YARN_PRODUCTION=true
+heroku config:set NETWORK_ID=1 ETHEREUM_HTTP=[YOUR_ETHEREUM_ENDPOINT] AUGUR_NODE_URL=ws://predictions.market:9001 YARN_PRODUCTION=true
 git push heroku master
 heroku ps:scale worker=1
 ```
