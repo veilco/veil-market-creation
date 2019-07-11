@@ -7,7 +7,8 @@
     "build:api": "NODE_ENV=production tsc -p tsconfig.api.json",
     "build": "npm run build:web && npm run build:api",
     "prestart": "npm run migrate",
-    "start": "NODE_ENV=production node dist/api/server.js"
+    "start": "NODE_ENV=production node dist/api/server.js",
+    "work": "NODE_ENV=production node dist/api/worker.js"
   },
   "dependencies": {
     "@babel/core": "^7.4.5",

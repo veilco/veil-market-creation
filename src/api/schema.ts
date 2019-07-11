@@ -74,12 +74,11 @@ export const typeDefs = gql`
     description: String!
     details: String
     resolutionSource: String
-    endTime: Date
+    endTime: Date!
     tags: [String]
-    category: String
-    marketCreatorFeeRate: BigNumber
+    category: String!
+    marketCreatorFeeRate: BigNumber!
     author: String
-    signature: String
     metadata: JSON
     minPrice: BigNumber
     maxPrice: BigNumber
@@ -120,6 +119,16 @@ function validateSignature(market: Market, signature: Signature) {
   return true;
 }
 
+function validateMarket(market: Partial<Market>) {
+  if (market.category && market.category.length > 32)
+    throw new Error("Category too long");
+  if (market.author && !market.author.match(/^0x[0-9a-f]{40}$/))
+    throw new Error("Author is invalid");
+  if (market.scalarDenomination && market.scalarDenomination.length > 256)
+    throw new Error("Scalar denomination too long");
+  return true;
+}
+
 export const resolvers: IResolvers<any, Context> = {
   Query: {
     markets: async (_: any, args: { author: string }, ctx: Context) => {
@@ -155,6 +164,7 @@ export const resolvers: IResolvers<any, Context> = {
     createMarket: async (_: any, args: any, ctx: Context) => {
       const { signature, market } = args;
       validateSignature(market, signature);
+      validateMarket(market);
       const [inserted] = await ctx
         .pg("markets")
         .insert({
@@ -174,6 +184,7 @@ export const resolvers: IResolvers<any, Context> = {
         .where("uid", uid)
         .first();
       validateSignature(existing, signature);
+      validateMarket(market);
       if (!existing) throw new Error("Market not found");
       if (existing.status !== "draft")
         throw new Error("Cannot update market after activation");
@@ -204,6 +215,7 @@ export const resolvers: IResolvers<any, Context> = {
         .where("uid", uid)
         .update({
           status: "activating",
+          activatedAt: new Date(),
           transactionHash
         })
         .returning("*");

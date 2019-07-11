@@ -31,7 +31,7 @@ function getEthereumHttp() {
 
 export default async function createContext(): Promise<Context> {
   const provider = new ethers.providers.JsonRpcProvider(getEthereumHttp());
-  const augurUrl = "ws://predictions.market:9001";
+  const augurUrl = process.env.AUGUR_NODE_URL;
   const augur = new Augur();
   await new Promise((resolve, reject) => {
     augur.connect({ augurNode: augurUrl }, (err, res) => {

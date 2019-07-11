@@ -85,8 +85,8 @@ export default class ExpirationDatePicker extends Component<{
   }
 
   get maxDate() {
-    // Max 90 days in the future
-    return new Date(Date.now() + ms("89d"));
+    // Max September 15
+    return new Date("2019-09-15T00:00:00.000Z");
   }
 
   @computed
@@ -180,7 +180,8 @@ export default class ExpirationDatePicker extends Component<{
         )}
         {this.isDateTooLate && (
           <Error>
-            Expiration date cannot be more than 3 months in the future.
+            Due to Augur's planned V2 launch, the expiration date cannot be
+            after September 15, 2019.
           </Error>
         )}
       </>

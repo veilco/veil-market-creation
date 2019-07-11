@@ -6,25 +6,26 @@ exports.up = async function(knex, Promise) {
       .unique()
       .index()
       .notNullable();
-    t.string("description").notNullable();
-    t.string("details").notNullable();
-    t.string("resolutionSource");
-    t.datetime("endTime").notNullable();
+    t.text("description").notNullable();
+    t.text("details").notNullable();
+    t.text("resolution_source");
+    t.datetime("end_time").notNullable();
+    t.datetime("activated_at");
     t.jsonb("tags").defaultTo("[]");
     t.string("category").notNullable();
-    t.decimal("marketCreatorFeeRate", 12, 10).notNullable();
+    t.decimal("market_creator_fee_rate", 12, 10).notNullable();
     t.string("author").notNullable();
-    t.string("transactionHash");
+    t.string("transaction_hash");
     t.string("status")
       .index()
       .notNullable();
     t.string("type").notNullable();
     t.string("address");
 
-    t.decimal("minPrice", 78, 0);
-    t.decimal("maxPrice", 78, 0);
-    t.decimal("numTicks", 78, 0);
-    t.string("scalarDenomination");
+    t.decimal("min_price", 78, 0);
+    t.decimal("max_price", 78, 0);
+    t.decimal("num_ticks", 78, 0);
+    t.string("scalar_denomination");
 
     t.jsonb("metadata");
   });
