@@ -6,7 +6,7 @@ Use it here: [https://create.veil.co](https://create.veil.co)
 
 ### Development
 
-To run locally, you must clone this repo and install the dependencies:
+To run locally, you must clone this repo and install the dependencies (we prefer using [yarn](https://yarnpkg.com/en/)):
 
 ```bash
 git clone https://github.com/veilco/veil-market-creation.git
@@ -15,7 +15,7 @@ yarn
 cp .env.example .env
 ```
 
-You'll need an Ethereum node to connect to, so update the `ETHEREUM_HTTP` variable in `.env` to a publicly-accessible Ethereum node RPC URL (such as an Infura or Alchemy endpoint).
+You'll need an Ethereum node to connect to, so update the `ETHEREUM_HTTP` variable in `.env` to a publicly-accessible Ethereum node RPC URL (such as an [Infura](https://infura.io/) or [Alchemy](https://alchemyapi.io/) endpoint).
 
 You'll also need a local PostgreSQL database named `veil_market_creation` with a `veil` user (or you can tweak `knexfile.js` to match your environment).
 
